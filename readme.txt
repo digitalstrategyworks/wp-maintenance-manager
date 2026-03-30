@@ -2,7 +2,6 @@
 Contributors:      tonyzeoli
 Author:            Tony Zeoli
 Author URI:        https://digitalstrategyworks.com
-Plugin URI:        https://digitalstrategyworks.com/site-maintenance-manager
 Tags:              updates, maintenance, plugins, themes, multisite, email, smtp, reporting
 Requires at least: 5.8
 Tested up to:      6.7

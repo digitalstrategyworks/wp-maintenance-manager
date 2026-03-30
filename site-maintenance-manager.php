@@ -1,7 +1,6 @@
 <?php
 /**
  * Plugin Name: Site Maintenance Manager
- * Plugin URI:  https://digitalstrategyworks.com
  * Description: Manage WordPress core, plugin, and theme updates with email reporting. Supports single-site and Multisite (network) installs.
  * Version:     1.4.9
  * Author:      Tony Zeoli
