@@ -248,6 +248,53 @@ function wpmm_cap_gate() {
 }
 
 // =========================================================================
+// Tip card — rendered at the bottom of every plugin page via admin_footer
+// =========================================================================
+add_action( 'admin_footer', 'wpmm_render_tip_card' );
+function wpmm_render_tip_card() {
+    // Only show on our own admin pages.
+    $screen = get_current_screen();
+    if ( ! $screen ) return;
+    $our_slugs = [
+        WPMM_SLUG_DASHBOARD, WPMM_SLUG_UPDATES, WPMM_SLUG_LOG,
+        WPMM_SLUG_EMAIL, WPMM_SLUG_SETTINGS,
+    ];
+    $on_our_page = false;
+    foreach ( $our_slugs as $slug ) {
+        if ( str_contains( $screen->id, $slug ) ) {
+            $on_our_page = true;
+            break;
+        }
+    }
+    if ( ! $on_our_page ) return;
+    ?>
+    <div class="wpmm-tip-card-wrap">
+        <div class="wpmm-tip-card">
+            <span class="wpmm-tip-coffee">&#9749;</span>
+            <div class="wpmm-tip-body">
+                <p class="wpmm-tip-heading">Enjoying Site Maintenance Manager?</p>
+                <p class="wpmm-tip-text">
+                    If this plugin saves you time, consider buying the author a coffee.
+                    Every tip is appreciated and helps support continued development.
+                </p>
+                <div class="wpmm-tip-actions">
+                    <a href="https://www.paypal.com/ncp/payment/NQVL9AFHQ2ALG"
+                       target="_blank" rel="noopener noreferrer"
+                       class="wpmm-tip-btn wpmm-tip-btn-paypal">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:5px;"><path d="M7.144 19.532l1.049-5.751c.11-.606.691-1.002 1.304-.948 2.155.19 6.242.258 7.891-3.484 1.985-4.51-1.551-6.58-4.59-6.58H7.29c-.56 0-1.039.407-1.131.958L4.01 17.981a.696.696 0 0 0 .687.811h2.169a.756.756 0 0 0 .745-.636l.277-1.52a.758.758 0 0 1 .745-.636h.511c3.358 0 6.163-1.396 6.952-5.437.347-1.775.037-3.218-.82-4.205 2.404.857 3.543 2.864 2.841 6.025-.91 4.204-4.139 5.52-7.836 5.52H9.33a.756.756 0 0 0-.745.636l-.55 3.019a.696.696 0 0 1-.687.588H5.193a.42.42 0 0 1-.415-.48l.366-2.159z"/></svg>
+                        Tip via PayPal
+                    </a>
+                    <span class="wpmm-tip-venmo">
+                        or <strong>Venmo</strong> <span class="wpmm-tip-venmo-handle">&#64;dswks</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+// =========================================================================
 // Non-page renderer (parent slug — should never be reached directly,
 // but we redirect to Dashboard just in case a user lands on it)
 // =========================================================================
