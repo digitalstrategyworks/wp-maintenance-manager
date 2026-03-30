@@ -4,7 +4,7 @@ Author:            Tony Zeoli
 Author URI:        https://digitalstrategyworks.com
 Tags:              updates, maintenance, plugins, themes, multisite, email, smtp, reporting
 Requires at least: 5.8
-Tested up to:      6.7
+Tested up to:      6.9
 Requires PHP:      8.0
 Stable tag:        1.4.9
 License:           GPL-2.0+
