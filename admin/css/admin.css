@@ -1328,3 +1328,36 @@
     border-radius: 3px;
     font-size: 12px;
 }
+
+/* ── Progress bar (v1.5.1) ───────────────────────────────────────────────── */
+.wpmm-progress-wrap {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--wpmm-radius);
+    padding: 16px 20px;
+    margin-bottom: 0;
+}
+
+.wpmm-progress-bar-track {
+    width: 100%;
+    background: #dbeafe;
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.wpmm-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    border-radius: 999px;
+    width: 0%;
+    transition: width 0.35s ease;
+}
+
+.wpmm-progress-label {
+    font-size: 13px;
+    color: #1e40af;
+    font-weight: 500;
+    min-height: 20px;
+}

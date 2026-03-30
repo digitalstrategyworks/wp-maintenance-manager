@@ -344,27 +344,6 @@ function wpmm_render_dashboard() {
 
             </div><!-- .wpmm-dashboard-summary -->
 
-            <!-- ── Report date / subject ── -->
-            <div class="wpmm-card">
-                <h2 class="wpmm-card-title">
-                    <span class="dashicons dashicons-admin-generic"></span> Weekly Report Configuration
-                </h2>
-                <p class="wpmm-card-desc">
-                    Select the week-ending date to build the email subject line used when
-                    sending reports from the <a href="<?php echo esc_url( wpmm_subpage_url( WPMM_SLUG_EMAIL ) ); ?>">Email Reports</a> page.
-                </p>
-                <div class="wpmm-form-row">
-                    <label>Email Subject Line</label>
-                    <div class="wpmm-subject-builder">
-                        <span class="wpmm-subject-prefix" id="wpmm-subject-prefix">
-                            <?php echo esc_html( get_bloginfo( 'name' ) ); ?> [<?php echo esc_html( get_bloginfo( 'url' ) ); ?>] Weekly WordPress Upgrades and Maintenance for week of:
-                        </span>
-                        <input type="text" id="wpmm-report-date" class="wpmm-date-input" placeholder="Select date…" readonly>
-                    </div>
-                    <input type="hidden" id="wpmm-subject-full">
-                </div>
-            </div>
-
             <!-- ── Quick nav ── -->
             <div class="wpmm-dashboard-tiles">
                 <a href="<?php echo esc_url( wpmm_subpage_url( WPMM_SLUG_UPDATES ) ); ?>" class="wpmm-tile">
@@ -532,12 +511,19 @@ function wpmm_render_updates() {
                 </p>
             </div>
 
-            <!-- Progress indicator — visible while a batch is running -->
-            <div id="wpmm-global-progress" class="wpmm-notice wpmm-notice-info" hidden>
-                <span class="dashicons dashicons-update wpmm-spin"></span> Updates in progress&hellip;
+            <!-- Progress bar — visible while a batch is running -->
+            <div id="wpmm-global-progress" hidden>
+                <div class="wpmm-progress-wrap">
+                    <div class="wpmm-progress-bar-track">
+                        <div class="wpmm-progress-bar-fill" id="wpmm-progress-fill" style="width:0%"></div>
+                    </div>
+                    <div class="wpmm-progress-label" id="wpmm-progress-label">
+                        Preparing updates&hellip;
+                    </div>
+                </div>
             </div>
 
-            <!-- Success banner — shown when all selected items complete -->
+            <!-- Success banner — shown only after a batch completes with updates present -->
             <div id="wpmm-global-success" class="wpmm-notice wpmm-notice-success" hidden>
                 <span class="dashicons dashicons-yes-alt"></span>
                 All selected items were updated successfully!
@@ -1030,7 +1016,26 @@ function wpmm_render_email() {
                     <label for="wpmm-email-subject-tab">Subject</label>
                     <input type="text" id="wpmm-email-subject-tab"
                         value="<?php echo esc_attr( get_bloginfo('name') . ' [' . get_bloginfo('url') . '] Weekly WordPress Upgrades and Maintenance' ); ?>"
-                        class="wpmm-input">
+                        class="wpmm-input"
+                        data-base-subject="<?php echo esc_attr( get_bloginfo('name') . ' [' . get_bloginfo('url') . '] Weekly WordPress Upgrades and Maintenance' ); ?>">
+                </div>
+
+                <div class="wpmm-form-row">
+                    <label for="wpmm-report-date">Report Week-Ending Date</label>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <input type="text" id="wpmm-report-date"
+                            class="wpmm-input wpmm-date-input"
+                            placeholder="Select date to append to subject&hellip;"
+                            readonly
+                            style="max-width:240px;">
+                        <a href="#" id="wpmm-clear-report-date" style="font-size:12px;display:none;">
+                            &times; Clear date
+                        </a>
+                    </div>
+                    <p class="wpmm-hint">
+                        Choosing a date appends <em>for week of: [date]</em> to the subject line above.
+                        Leave blank to send without a date.
+                    </p>
                 </div>
 
                 <div class="wpmm-email-preview">

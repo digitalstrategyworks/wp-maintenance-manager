@@ -11,21 +11,56 @@ jQuery(function ($) {
     var updatesRanThisLoad  = false;   // true only if wpmm_run_update was called this page load
 
     // =========================================================================
-    // Date picker (Dashboard page)
+    // Date picker (Email Reports page)
+    // Appends "for week of: [date]" to the subject line when a date is selected.
+    // The subject field keeps its base value (stored in data-base-subject) and
+    // the date portion is appended/removed as the date changes.
     // =========================================================================
-    var $dateInput = $('#wpmm-report-date');
-    if ($dateInput.length) {
-        $dateInput.datepicker({
+    var $reportDate    = $('#wpmm-report-date');
+    var $subjectField  = $('#wpmm-email-subject-tab');
+    var $clearDateLink = $('#wpmm-clear-report-date');
+
+    if ($reportDate.length) {
+        $reportDate.datepicker({
             dateFormat: 'MM d, yy',
-            onSelect: function () { updateSubject(); }
+            onSelect: function (dateText) {
+                applyReportDate(dateText);
+            }
         });
     }
 
-    function updateSubject() {
-        var dateVal = $dateInput.val();
-        var prefix  = $('#wpmm-subject-prefix').text().trim();
-        $('#wpmm-subject-full').val( dateVal ? prefix + ' ' + dateVal : prefix );
+    function applyReportDate(dateText) {
+        var base = $subjectField.data('base-subject') || $subjectField.val();
+        // Store the base if we haven't yet
+        if (!$subjectField.data('base-subject')) {
+            $subjectField.data('base-subject', base);
+        }
+        if (dateText) {
+            $subjectField.val(base + ' for week of: ' + dateText);
+            $clearDateLink.show();
+        } else {
+            $subjectField.val(base);
+            $clearDateLink.hide();
+        }
     }
+
+    // Allow the user to type directly in the subject field — update base-subject
+    // so date re-appends to whatever they typed, not the original PHP value.
+    $subjectField.on('input', function () {
+        // Strip any existing date suffix so typing doesn't accumulate suffixes
+        var current = $(this).val();
+        var forIdx  = current.indexOf(' for week of: ');
+        if (forIdx !== -1) {
+            current = current.substring(0, forIdx);
+        }
+        $(this).data('base-subject', current);
+    });
+
+    $(document).on('click', '#wpmm-clear-report-date', function (e) {
+        e.preventDefault();
+        $reportDate.val('');
+        applyReportDate('');
+    });
 
     // =========================================================================
     // Stored client email — Save / Edit / Cancel (Dashboard page)
@@ -151,6 +186,7 @@ jQuery(function ($) {
             'Scanning for available updates&hellip;</p>'
         );
         $('#wpmm-global-success').prop('hidden', true);
+        $('#wpmm-global-progress').prop('hidden', true);
 
         $.post(wpmm.ajax_url, {
             action: 'wpmm_get_updates',
@@ -179,6 +215,14 @@ jQuery(function ($) {
         $container.empty();
 
         var hasAny = data.core.length || data.plugins.length || data.themes.length;
+
+        // If new updates are available, hide the success banner — it belonged to
+        // the previous session and is no longer relevant.
+        if (hasAny) {
+            $('#wpmm-global-success').prop('hidden', true);
+            $('#wpmm-global-progress').prop('hidden', true);
+        }
+
         if (!hasAny) {
             $container.html(
                 '<div class="wpmm-card"><div class="wpmm-all-good">' +
@@ -290,17 +334,44 @@ jQuery(function ($) {
             }
         }
 
-        // Reset state for a fresh batch: hide the previous success banner,
-        // show an in-progress indicator.
-        $('#wpmm-global-success').prop('hidden', true);
-        $('#wpmm-global-progress').prop('hidden', false)
-            .html('<span class="dashicons dashicons-update wpmm-spin"></span> '
-                + 'Updating ' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '…');
+        // Reset progress bar state for the new batch.
+        var totalItems     = items.length;
+        var completedItems = 0;
 
-        runUpdatesSequential(items, 0, function () {
-            // Hide progress, show success.
-            $('#wpmm-global-progress').prop('hidden', true);
-            $('#wpmm-global-success').prop('hidden', false);
+        $('#wpmm-global-success').prop('hidden', true);
+        $('#wpmm-progress-fill').css('width', '0%');
+        $('#wpmm-progress-label').text(
+            'Starting ' + totalItems + ' update' + (totalItems !== 1 ? 's' : '') + '…'
+        );
+        $('#wpmm-global-progress').prop('hidden', false);
+
+        // Wrap the done callback to advance the progress bar after each item.
+        var originalItems = items.slice(); // keep a reference to the full list
+
+        function onItemComplete(itemName, success) {
+            completedItems++;
+            var pct = Math.round( (completedItems / totalItems) * 100 );
+            $('#wpmm-progress-fill').css('width', pct + '%');
+            var statusWord = success ? 'Updated' : 'Failed';
+            var remaining  = totalItems - completedItems;
+            if (remaining > 0) {
+                $('#wpmm-progress-label').text(
+                    statusWord + ': ' + itemName +
+                    ' — ' + remaining + ' remaining…'
+                );
+            } else {
+                $('#wpmm-progress-label').text(
+                    statusWord + ': ' + itemName + ' — All done!'
+                );
+            }
+        }
+
+        runUpdatesSequential(items, 0, onItemComplete, function () {
+            // Small pause so the 100% bar is visible before hiding.
+            setTimeout(function () {
+                $('#wpmm-global-progress').prop('hidden', true);
+                $('#wpmm-global-success').prop('hidden', false);
+            }, 600);
         });
     });
 
@@ -323,15 +394,18 @@ jQuery(function ($) {
     });
 
     // ── Sequential batch runner ────────────────────────────────────────────
-    function runUpdatesSequential(items, index, done) {
+    // onProgress(itemName, success) called after each item completes.
+    // done() called when all items are finished.
+    function runUpdatesSequential(items, index, onProgress, done) {
         if (index >= items.length) { done(); return; }
         var item = items[index];
         var $li  = $('.wpmm-item[data-type="' + item.type + '"]').filter(function () {
             return $(this).attr('data-slug') === item.slug;
         });
         var $btn = $li.find('.wpmm-update-one-btn');
-        runSingleUpdate(item.type, item.slug, item.pkg, $li, $btn, function () {
-            runUpdatesSequential(items, index + 1, done);
+        runSingleUpdate(item.type, item.slug, item.pkg, $li, $btn, function (itemName, success) {
+            if (onProgress) { onProgress(itemName, success); }
+            runUpdatesSequential(items, index + 1, onProgress, done);
         });
     }
 
@@ -352,7 +426,10 @@ jQuery(function ($) {
             package:    pkg
         }, function (res) {
             $btn.prop('disabled', false);
-            if (res.success && res.data && res.data.status === 'success') {
+            var itemName = (res.data && res.data.name) ? res.data.name : slug;
+            var success  = res.success && res.data && res.data.status === 'success';
+
+            if (success) {
                 $btn.html('Updated &#10003;')
                     .addClass('wpmm-btn-success')
                     .removeClass('wpmm-btn-primary')
@@ -374,13 +451,13 @@ jQuery(function ($) {
                     '<div class="wpmm-status-failed-reason">' + escHtml(msg) + '</div>'
                 );
             }
-            callback();
+            callback(itemName, success);
         }).fail(function () {
             $btn.prop('disabled', false).html('Retry');
             $status.html(
                 '<span class="wpmm-status-failed">&#10060; Request failed. Please try again.</span>'
             );
-            callback();
+            callback(slug, false);
         });
     }
 
