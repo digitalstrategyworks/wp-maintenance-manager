@@ -323,7 +323,7 @@ function wpmm_render_settings() {
                                         data-mailer="<?php echo esc_attr( $key ); ?>">
                                     <span class="dashicons <?php echo esc_attr( $m['icon'] ); ?> wpmm-mailer-icon"></span>
                                     <span class="wpmm-mailer-label"><?php echo esc_html( $m['label'] ); ?></span>
-                                    <span class="wpmm-mailer-sub"><?php echo $m['sub']; ?></span>
+                                    <span class="wpmm-mailer-sub"><?php echo wp_kses_post( $m['sub'] ); ?></span>
                                     <?php if ( $active ) : ?>
                                         <span class="wpmm-mailer-check">&#10003;</span>
                                     <?php endif; ?>

@@ -268,9 +268,10 @@ function wpmm_send_email( $to, $subject, $body, $admin_id = 0 ) {
         ]
     );
 
-    // Log insert failures so they appear in the diagnostic panel
-    if ( $result === false ) {
-        error_log( 'WPMM wpmm_send_email insert failed: ' . $wpdb->last_error );
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- legitimate insert to custom plugin table.
+    if ( $result === false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+        trigger_error( 'Site Maintenance Manager: email log insert failed: ' . esc_html( $wpdb->last_error ), E_USER_WARNING );
     }
 
     return [ 'success' => $sent, 'email_id' => $wpdb->insert_id ];

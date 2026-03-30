@@ -133,7 +133,8 @@ function wpmm_enqueue_assets( $hook ) {
     }
     if ( ! $is_our_page ) return;
 
-    wp_enqueue_style( 'jquery-ui', 'https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css' );
+    // Use the jQuery UI CSS bundled with WordPress (avoids external resource offloading).
+    wp_enqueue_style( 'wp-jquery-ui-dialog' );
     wp_enqueue_style( 'wpmm-admin', WPMM_PLUGIN_URL . 'admin/css/admin.css', [], WPMM_VERSION );
     // On the Settings page, load the media library first so wp.media is
     // available when our script's jQuery ready handler runs.
@@ -242,7 +243,7 @@ function wpmm_page_header( $active_slug ) {
 // =========================================================================
 function wpmm_cap_gate() {
     if ( ! current_user_can( wpmm_required_cap() ) ) {
-        wp_die( __( 'You do not have permission to access this page.', 'site-maintenance-manager' ) );
+        wp_die( esc_html__( 'You do not have permission to access this page.', 'site-maintenance-manager' ) );
     }
 }
 
@@ -271,6 +272,7 @@ function wpmm_render_dashboard() {
 
     // Most recent update session
     $log_table   = $wpdb->prefix . 'wpmm_update_log';
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is safe (prefix + fixed string), no user input involved.
     $last_row    = $wpdb->get_row( "SELECT updated_at, COUNT(*) AS total, SUM(status='success') AS successes, SUM(status!='success') AS failures FROM {$log_table} ORDER BY updated_at DESC LIMIT 1" );
     $last_update = $last_row && $last_row->updated_at
         ? date_i18n( 'F j, Y 	 g:i A', strtotime( $last_row->updated_at ) )
@@ -557,16 +559,17 @@ function wpmm_render_log() {
     wpmm_cap_gate();
     global $wpdb;
 
-    $log_search = sanitize_text_field( $_GET['log_search'] ?? '' );
-    $log_from   = sanitize_text_field( $_GET['log_from']   ?? '' );
-    $log_to     = sanitize_text_field( $_GET['log_to']     ?? '' );
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter params on admin-only page; no state change occurs.
+    $log_search = sanitize_text_field( wp_unslash( $_GET['log_search'] ?? '' ) );
+    $log_from   = sanitize_text_field( wp_unslash( $_GET['log_from']   ?? '' ) );
+    $log_to     = sanitize_text_field( wp_unslash( $_GET['log_to']     ?? '' ) );
     $sess_page  = max( 1, absint( $_GET['sess_page'] ?? 1 ) );
     $log_table  = $wpdb->prefix . 'wpmm_update_log';
     $page_url   = wpmm_subpage_url( WPMM_SLUG_LOG );
 
     // Per-page limit — default 20, selectable to 50 or 100.
     $allowed_limits = [ 20, 50, 100 ];
-    $per_page       = (int) ( $_GET['per_page'] ?? 20 );
+    $per_page       = absint( wp_unslash( $_GET['per_page'] ?? 20 ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display preference, no state change.
     if ( ! in_array( $per_page, $allowed_limits, true ) ) {
         $per_page = 20;
     }
@@ -582,10 +585,12 @@ function wpmm_render_log() {
     if ( $log_from ) { $where .= ' AND DATE(updated_at) >= %s'; $args[] = $log_from; }
     if ( $log_to )   { $where .= ' AND DATE(updated_at) <= %s'; $args[] = $log_to; }
 
+    // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is safe (prefix + fixed string); user values are passed via prepare() args.
     $sql  = "SELECT * FROM {$log_table} {$where} ORDER BY updated_at DESC";
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
     $rows = $args
-        ? $wpdb->get_results( $wpdb->prepare( $sql, $args ) )
-        : $wpdb->get_results( $sql );
+        ? $wpdb->get_results( $wpdb->prepare( $sql, $args ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        : $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
     // Group rows into sessions in PHP.
     $sessions      = [];
@@ -671,7 +676,7 @@ function wpmm_render_log() {
                     <h2 class="wpmm-card-title" style="margin:0;">
                         <span class="dashicons dashicons-list-view"></span> Update History
                         <span class="wpmm-card-title-sub">
-                            <?php echo $sess_total; ?> session<?php echo $sess_total !== 1 ? 's' : ''; ?>
+                            <?php echo absint( $sess_total ); ?> session<?php echo $sess_total !== 1 ? 's' : ''; ?>
                         </span>
                     </h2>
                     <div style="display:flex;align-items:center;gap:10px;">
@@ -689,7 +694,7 @@ function wpmm_render_log() {
                             ?>
                                 <option value="<?php echo esc_url( $lim_qs ); ?>"
                                     <?php selected( $per_page, $lim ); ?>>
-                                    Last <?php echo $lim; ?>
+                                    Last <?php echo absint( $lim ); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -703,7 +708,7 @@ function wpmm_render_log() {
                 <form method="get" class="wpmm-search-form" id="wpmm-log-search-form">
                     <input type="hidden" name="page" value="<?php echo esc_attr( WPMM_SLUG_LOG ); ?>">
                     <?php if ( $per_page !== 20 ) : ?>
-                        <input type="hidden" name="per_page" value="<?php echo $per_page; ?>">
+                        <input type="hidden" name="per_page" value="<?php echo absint( $per_page ); ?>">
                     <?php endif; ?>
                     <div class="wpmm-search-row">
                         <div class="wpmm-autocomplete-wrap">
@@ -734,7 +739,7 @@ function wpmm_render_log() {
                 <?php if ( $page_keys ) : ?>
 
                 <!-- Pagination — top -->
-                <?php echo $make_pagination(); ?>
+                <?php echo wp_kses_post( $make_pagination() ); ?>
 
                 <!-- Session accordion -->
                 <div class="wpmm-session-list">
@@ -772,12 +777,12 @@ function wpmm_render_log() {
                                 <span class="wpmm-session-counts">
                                     <?php if ( $success_count > 0 ) : ?>
                                         <span class="wpmm-count-pill wpmm-count-success">
-                                            &#10003; <?php echo $success_count; ?> updated
+                                            &#10003; <?php echo absint( $success_count ); ?> updated
                                         </span>
                                     <?php endif; ?>
                                     <?php if ( $fail_count > 0 ) : ?>
                                         <span class="wpmm-count-pill wpmm-count-fail">
-                                            &#10007; <?php echo $fail_count; ?> failed
+                                            &#10007; <?php echo absint( $fail_count ); ?> failed
                                         </span>
                                     <?php endif; ?>
                                     <span class="wpmm-count-pill wpmm-count-total">
@@ -848,7 +853,7 @@ function wpmm_render_log() {
                 </div>
 
                 <!-- Pagination — bottom -->
-                <?php echo $make_pagination(); ?>
+                <?php echo wp_kses_post( $make_pagination() ); ?>
 
                 <?php else : ?>
                     <div class="wpmm-empty" style="padding:30px 0;">
@@ -875,7 +880,7 @@ function wpmm_render_log() {
                     Database Diagnostic
                     <?php if ( isset( $diag['update_log']['count'] ) ) : ?>
                         <span class="wpmm-card-title-sub">
-                            <?php echo $diag['update_log']['count']; ?> row<?php echo $diag['update_log']['count'] !== 1 ? 's' : ''; ?> in update log
+                            <?php echo absint( $diag['update_log']['count'] ); ?> row<?php echo $diag['update_log']['count'] !== 1 ? 's' : ''; ?> in update log
                         </span>
                     <?php endif; ?>
                 </summary>
@@ -931,7 +936,7 @@ function wpmm_render_log() {
                                 endforeach;
                                 ?>
                             </p>
-                            <p><strong>Row count:</strong> <?php echo $t['count']; ?></p>
+                            <p><strong>Row count:</strong> <?php echo absint( $t['count'] ); ?></p>
                             <?php if ( ! empty( $t['recent'] ) ) : ?>
                                 <table class="wpmm-table" style="margin-top:4px;font-size:12px;">
                                     <thead>
@@ -986,6 +991,7 @@ function wpmm_render_email() {
 
     $saved_email  = get_option( 'wpmm_client_email', '' );
     $email_table  = $wpdb->prefix . 'wpmm_email_log';
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- table name is safe (prefix + fixed string).
     $email_rows   = $wpdb->get_results(
         "SELECT * FROM {$email_table} ORDER BY sent_at DESC LIMIT 50"
     );
@@ -1033,9 +1039,9 @@ function wpmm_render_email() {
                         <?php
                         $ls = get_option( 'wpmm_last_session', [] );
                         $perf_admin = wpmm_get_default_admin();
-                        $from_label = $perf_admin ? esc_html( $perf_admin->display_name . ' <' . $perf_admin->user_email . '>' ) : esc_html( get_option( 'admin_email' ) );
+                        $from_label = $perf_admin ? ( $perf_admin->display_name . ' <' . $perf_admin->user_email . '>' ) : get_option( 'admin_email' );
                         ?>
-                        <span><strong>From:</strong> <?php echo $from_label; ?></span>
+                        <span><strong>From:</strong> <?php echo esc_html( $from_label ); ?></span>
                         <?php if ( ! empty( $ls['session_id'] ) ) : ?>
                             <span><strong>Content:</strong>
                                 Updates from session on

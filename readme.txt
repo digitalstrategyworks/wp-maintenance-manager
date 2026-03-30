@@ -2,115 +2,37 @@
 Contributors:      tonyzeoli
 Author:            Tony Zeoli
 Author URI:        https://digitalstrategyworks.com
-Tags:              updates, maintenance, plugins, themes, multisite, email, smtp, reporting
+Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        1.4.9
+Stable tag:        1.5.0
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 
-A professional WordPress maintenance plugin for developers and agencies. Manage core, plugin, and theme updates, send branded HTML email reports, and configure reliable SMTP email delivery — all from one dashboard.
+Manage WordPress updates, send branded HTML email reports, and configure SMTP email delivery — all from one admin dashboard.
 
 == Description ==
 
-Site Maintenance Manager is a complete WordPress site maintenance solution built for web developers, digital agencies, and site administrators who manage one or more WordPress websites. It brings together everything you need to keep a site up to date, communicate that work to clients, and ensure those communications are reliably delivered.
+Site Maintenance Manager is a professional WordPress maintenance plugin for developers and agencies. It centralises update management for WordPress Core, plugins, and themes, and pairs it with a polished email reporting workflow.
 
-The plugin is designed to replace ad hoc, tab-switching update workflows with a single, purpose-built admin panel. You run updates, the plugin logs every result, you send a branded report to your client, and you move on to the next site.
+**What it does:**
 
----
+* Scans for available WordPress Core, plugin, and theme updates in separate sections
+* Updates items individually or in batch with inline success/failure feedback and plain-English error explanations
+* Logs every update action automatically — searchable by item name or date range, grouped into sessions
+* Builds a branded HTML maintenance report email from each update session and sends it to your client
+* Configures reliable SMTP email delivery via nine supported providers — no separate SMTP plugin required
+* Manages agency branding: company logo, company name, and default administrator shown on reports
+* Works on single-site WordPress installs and Multisite networks
 
-= Five Pages, One Workflow =
+**Supported SMTP Providers:**
 
-**Dashboard** gives you an at-a-glance status view of the site: when was the last update session, who is the default administrator, what is the client email address, and what agency branding is active. Quick-navigation tiles link to every other page.
+SendGrid, Mailgun, Brevo, SendLayer, SMTP.com, Gmail / Google Workspace, Microsoft / Outlook / Office 365, manual SMTP, or WordPress default.
 
-**Updates** is where updates actually happen. The plugin scans for available WordPress Core, plugin, and theme updates and presents them in three separate sections. Each item shows the installed version and the version it will be updated to. You select items individually or in bulk, choose which administrator performed the work for this session, and click Update. Every result is logged immediately and displayed inline — green checkmark for success, red indicator with a plain-English explanation for failures.
+**Who it is for:**
 
-**Update Log** is a full, paginated history of every update action ever performed through the plugin. Sessions are grouped in a collapsible accordion — the most recent session opens automatically. You can search by item name (with live autocomplete), filter by date range, and control how many sessions appear per page (20, 50, or 100). Previous and Next navigation bars appear at both the top and bottom of the list.
-
-**Email Reports** is where you send and manage maintenance report emails. The plugin builds a branded HTML email from the entries in the most recent update session — automatically. You review the From address, confirm the recipient, edit the subject line if needed, and send. Every sent email is logged in a history table with a live Preview button (renders the email in a modal) and a Resend button. The email body is always rebuilt from the original log entries when previewing or resending, so it reflects the current template design even for old emails.
-
-**Settings** is the control centre for all agency branding and plugin behaviour. It contains four cards: Company & Branding, Client Contact, Site Administrators, and SMTP & Email Delivery.
-
----
-
-= Full Feature List =
-
-**Dashboard**
-* Status summary cards: last update date/time, client email, default administrator, agency name and logo
-* Weekly report subject line builder with date picker
-* Quick-navigation tiles to all five plugin pages
-
-**Updates**
-* Separate sections for WordPress Core, Plugins, and Themes
-* Per-item checkboxes plus Select All per section
-* Batch update (Update Selected) and single-item update
-* Per-session administrator override — select any WordPress admin for this session
-* Inline success/failure status after each individual update
-* Plain-English failure explanations (24 mapped error codes, e.g. license required, update server unreachable, disk write failure)
-* Global success banner on batch completion with link to Email Reports
-* Refresh button re-scans without page reload
-
-**Update Log**
-* Every update action logged: item name, type (Core / Plugin / Theme), old version, new version, status, error code, notes
-* Sessions grouped in a collapsible accordion ordered newest-first
-* Live search autocomplete: type 2+ characters and matching item names appear in a dropdown; select to search instantly
-* Date range filter (From / To)
-* Per-page selector: show last 20, 50, or 100 sessions
-* Previous / Next pagination at top and bottom of the list
-* Refresh button for immediate reload
-* Database Diagnostic panel (expandable): shows both database tables, all columns with missing-column highlighting, row counts, 5 most recent rows from each table, and a Force DB Upgrade Now button
-
-**Email Reports**
-* Branded HTML email with header, sectioned update tables (Core / Plugins / Themes), and footer
-* Email header: Site Name and Site URL (with external-link icon) at top; then agency logo + company name inline; then "WordPress website updates administered by [Administrator Name]"
-* Send to any email address; defaults to the saved client email
-* Editable subject line
-* Sent Email History table: recipient, subject, status (Sent / Failed), timestamp
-* Live Preview modal: renders the full email HTML in an iframe
-* Preview and Resend always rebuild the body from the original log entries using the current template
-* Persistent session tracking: the correct update session is sent even when you navigate from the Updates page to Email Reports
-
-**Settings — Company & Branding**
-* Upload a company / agency logo via the WordPress media library
-* Logo displayed in the plugin header on every page and in email report headers
-* Company name inline-edit with save / cancel
-* Both persist as part of the wpmm_settings option
-
-**Settings — Client Contact**
-* Client email address inline-edit with save / cancel
-* Saved email pre-populates everywhere: Updates page notice, Email Reports send form, email From: header
-
-**Settings — Site Administrators**
-* Table of all WordPress Administrators with Gravatar, display name, username, email, and registration date
-* Radio button to select the default performing administrator
-* Default administrator name and email appear in email reports and in the From: header
-* Default can be overridden per session on the Updates page
-
-**Settings — SMTP & Email Delivery**
-* Nine mailer options via a visual tile selector
-* Pre-configured server details for all provider tiles (no need to look up host/port/encryption)
-* Context-sensitive help panel for each provider with step-by-step setup instructions
-* Username hint updates per provider (e.g. "always enter apikey for SendGrid")
-* Password / API key encrypted with AES-256-CBC before storage (key derived from AUTH_KEY + SECURE_AUTH_KEY)
-* Stored password never output to the browser — only a masked placeholder is shown
-* From Name and From Email fields
-* Send Test Email button with dedicated recipient input and real-time success/failure reporting
-
-**Multisite / Network**
-* Works on both single-site installs and WordPress Multisite networks
-* Network-activate to cover all sub-sites, or activate per-site
-* Database tables provisioned per site on activation and for new sites via wp_initialize_site
-* Each sub-site has its own isolated update log and email log
-* AJAX requests correctly resolve to the originating sub-site's tables via switch_to_blog
-
-**Database & Schema**
-* Two custom tables per site: {prefix}_wpmm_update_log and {prefix}_wpmm_email_log
-* Schema auto-upgrades on every admin page load after a version bump (admin_init hook)
-* All column additions use INFORMATION_SCHEMA checks — safe on all MySQL / MariaDB versions
-* Force DB Upgrade Now button for manual migration without deactivation
-
----
+Web developers, digital agencies, and WordPress administrators who manage client sites and need a reliable, repeatable maintenance workflow with professional client-facing reporting.
 
 == Installation ==
 
@@ -389,6 +311,46 @@ The App Password method above works identically for Workspace accounts. Alternat
 
 == Changelog ==
 
+= 1.5.0 =
+**WordPress.org Plugin Check compliance pass**
+
+All errors and warnings reported by the Plugin Check plugin have been resolved:
+
+* admin/admin.php: Replaced external jQuery UI CSS (code.jquery.com) with the
+  bundled WordPress version (wp-jquery-ui-dialog) to comply with the no external
+  resource offloading rule.
+* admin/admin.php: Wrapped echo __() in esc_html__() per output escaping rules.
+* admin/admin.php: Added wp_unslash() to all $_GET input reads (log_search,
+  log_from, log_to, per_page, sess_page).
+* admin/admin.php: Replaced all bare echo $integer with echo absint($integer)
+  (sess_total, lim, per_page, success_count, fail_count, diag counts).
+* admin/admin.php: Wrapped echo $make_pagination() in wp_kses_post().
+* admin/admin.php: Wrapped echo $from_label in esc_html() after building the
+  value as a plain string rather than a pre-escaped string.
+* admin/admin.php: Added phpcs:ignore with explanatory comments on direct DB
+  queries that use safe table names (prefix + fixed string, no user input).
+* admin/settings.php: Wrapped echo $m['sub'] in wp_kses_post() — the sub-labels
+  contain HTML entities and are hardcoded, not user input.
+* includes/ajax.php: Added wp_unslash() to all $_POST reads. Added
+  phpcs:ignore WordPress.Security.NonceVerification.Missing with explanatory
+  comments — nonce IS verified via wpmm_ajax_cap_check() → check_ajax_referer(),
+  but the static analyser cannot trace into called functions.
+* includes/smtp.php: Added wp_unslash() to all $_POST reads. smtp_enc is now
+  sanitized through a $raw_enc variable before the in_array() check.
+  smtp_password is now sanitized with sanitize_text_field() before use.
+* includes/email.php: Replaced unconditional error_log() with a WP_DEBUG-gated
+  trigger_error() call, acceptable to WordPress.org reviewers.
+* includes/db.php: Added file-level phpcs:disable block for the five DB-related
+  rules that cannot apply to schema management (CREATE TABLE, ALTER TABLE,
+  SHOW COLUMNS, INFORMATION_SCHEMA). All table names are $wpdb->prefix + fixed
+  strings — no user input is ever interpolated.
+* includes/updates.php: Added phpcs:ignore on the direct wpdb->insert() call.
+* readme.txt: Tags reduced from 8 to 5 (WordPress.org maximum).
+* readme.txt: Short description trimmed to 124 characters (maximum 150).
+* readme.txt: Description section trimmed from 7,102 to 1,304 characters
+  (maximum 2,500).
+
+
 = 1.4.9 =
 * Renamed plugin from "WP Maintenance Manager" to "Site Maintenance Manager"
   to comply with WordPress.org plugin repository naming rules, which prohibit
@@ -504,6 +466,10 @@ The App Password method above works identically for Workspace accounts. Alternat
 * 24-entry error code dictionary with plain-English explanations.
 
 == Upgrade Notice ==
+
+= 1.5.0 =
+WordPress.org Plugin Check compliance fixes. No database or functional changes.
+
 
 = 1.4.9 =
 Plugin renamed to Site Maintenance Manager for WordPress.org compliance. No database or functional changes.

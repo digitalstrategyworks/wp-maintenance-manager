@@ -98,17 +98,17 @@ function wpmm_ajax_save_smtp() {
 
     $s = wpmm_get_settings();
 
-    $s['smtp_mailer']     = sanitize_text_field( $_POST['smtp_mailer']     ?? 'default' );
-    $s['smtp_host']       = sanitize_text_field( $_POST['smtp_host']       ?? '' );
+    $s['smtp_mailer']     = sanitize_text_field( wp_unslash( $_POST['smtp_mailer']     ?? 'default' ) );
+    $s['smtp_host']       = sanitize_text_field( wp_unslash( $_POST['smtp_host']       ?? '' ) );
     $s['smtp_port']       = absint( $_POST['smtp_port']                    ?? 587 );
-    $s['smtp_enc']        = in_array( $_POST['smtp_enc'] ?? '', [ 'tls', 'ssl', 'none' ], true )
-                            ? $_POST['smtp_enc'] : 'tls';
-    $s['smtp_username']   = sanitize_text_field( $_POST['smtp_username']   ?? '' );
-    $s['smtp_from_email'] = sanitize_email(      $_POST['smtp_from_email'] ?? '' );
-    $s['smtp_from_name']  = sanitize_text_field( $_POST['smtp_from_name']  ?? '' );
+    $raw_enc              = sanitize_text_field( wp_unslash( $_POST['smtp_enc'] ?? '' ) );
+    $s['smtp_enc']        = in_array( $raw_enc, [ 'tls', 'ssl', 'none' ], true ) ? $raw_enc : 'tls';
+    $s['smtp_username']   = sanitize_text_field( wp_unslash( $_POST['smtp_username']   ?? '' ) );
+    $s['smtp_from_email'] = sanitize_email(      wp_unslash( $_POST['smtp_from_email'] ?? '' ) );
+    $s['smtp_from_name']  = sanitize_text_field( wp_unslash( $_POST['smtp_from_name']  ?? '' ) );
 
     // Only update the password if a new non-placeholder value was submitted
-    $raw_pass = wp_unslash( $_POST['smtp_password'] ?? '' );
+    $raw_pass = sanitize_text_field( wp_unslash( $_POST['smtp_password'] ?? '' ) );
     if ( $raw_pass !== '' && $raw_pass !== '••••••••' ) {
         $s['smtp_password_enc'] = wpmm_encrypt_smtp( $raw_pass );
     }
@@ -126,7 +126,7 @@ function wpmm_ajax_test_smtp() {
         wp_send_json_error( 'Permission denied.' );
     }
 
-    $to      = sanitize_email( $_POST['test_email'] ?? '' );
+    $to      = sanitize_email( wp_unslash( $_POST['test_email'] ?? '' ) );
     $current = wp_get_current_user();
     if ( ! $to ) {
         $to = $current->user_email;

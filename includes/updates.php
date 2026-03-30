@@ -258,6 +258,7 @@ function wpmm_do_update( $type, $slug, $package = '' ) {
     }
 
     // -- Log ------------------------------------------------------------------
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- legitimate insert to custom plugin table.
     $wpdb->insert(
         $wpdb->prefix . 'wpmm_update_log',
         [

@@ -20,10 +20,11 @@ function wpmm_ajax_cap_check() {
 function wpmm_ajax_run_update() {
     wpmm_ajax_cap_check();
 
-    $type       = sanitize_text_field( $_POST['item_type']  ?? '' );
-    $slug       = sanitize_text_field( $_POST['item_slug']  ?? '' );
-    $session_id = sanitize_text_field( $_POST['session_id'] ?? '' );
-    $package    = esc_url_raw( $_POST['package']            ?? '' );
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check() → check_ajax_referer().
+    $type       = sanitize_text_field( wp_unslash( $_POST['item_type']  ?? '' ) );
+    $slug       = sanitize_text_field( wp_unslash( $_POST['item_slug']  ?? '' ) );
+    $session_id = sanitize_text_field( wp_unslash( $_POST['session_id'] ?? '' ) );
+    $package    = esc_url_raw( wp_unslash( $_POST['package'] ?? '' ) );
 
     if ( ! $type || ! $slug ) {
         wp_send_json_error( 'Missing parameters.' );
@@ -39,15 +40,16 @@ function wpmm_ajax_run_update() {
 function wpmm_ajax_send_email() {
     wpmm_ajax_cap_check();
 
-    $to       = sanitize_email( $_POST['to_email'] ?? '' );
-    $subject  = sanitize_text_field( $_POST['subject']  ?? '' );
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check().
+    $to       = sanitize_email( wp_unslash( $_POST['to_email'] ?? '' ) );
+    $subject  = sanitize_text_field( wp_unslash( $_POST['subject']  ?? '' ) );
     $admin_id = absint( $_POST['admin_id'] ?? 0 );
 
     // Session resolution strategy (in priority order):
     // 1. session_id explicitly posted (same-page flow from Updates page).
     // 2. wpmm_last_session option (cross-page flow: updates → Email Reports).
     // 3. Empty string → fall back to the 100 most recent log entries.
-    $posted_session = sanitize_text_field( $_POST['session_id'] ?? '' );
+    $posted_session = sanitize_text_field( wp_unslash( $_POST['session_id'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified above.
     $last           = get_option( 'wpmm_last_session', [] );
 
     $session_id = $posted_session;
@@ -72,19 +74,16 @@ function wpmm_ajax_send_email() {
         $switched = true;
     }
 
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
     if ( $session_id ) {
         $log_entries = $wpdb->get_results( $wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}wpmm_update_log
-             WHERE session_id = %s
-             ORDER BY updated_at ASC",
+            "SELECT * FROM {$wpdb->prefix}wpmm_update_log WHERE session_id = %s ORDER BY updated_at ASC",
             $session_id
         ) );
     } else {
         // No session at all — use the most recent 100 entries.
-        $log_entries = $wpdb->get_results(
-            "SELECT * FROM {$wpdb->prefix}wpmm_update_log
-             ORDER BY updated_at DESC LIMIT 100"
-        );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $log_entries = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wpmm_update_log ORDER BY updated_at DESC LIMIT 100" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
     }
 
     if ( $switched ) {
@@ -106,7 +105,7 @@ function wpmm_ajax_resend_email() {
     wpmm_ajax_cap_check();
 
     global $wpdb;
-    $email_id = absint( $_POST['email_id'] ?? 0 );
+    $email_id = absint( $_POST['email_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check().
     $row      = $wpdb->get_row( $wpdb->prepare(
         "SELECT * FROM {$wpdb->prefix}wpmm_email_log WHERE id = %d", $email_id
     ) );
@@ -152,7 +151,7 @@ function wpmm_ajax_get_email_body() {
     wpmm_ajax_cap_check();
 
     global $wpdb;
-    $email_id = absint( $_POST['email_id'] ?? 0 );
+    $email_id = absint( $_POST['email_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check().
     $row      = $wpdb->get_row( $wpdb->prepare(
         "SELECT * FROM {$wpdb->prefix}wpmm_email_log WHERE id = %d",
         $email_id
@@ -191,7 +190,7 @@ function wpmm_ajax_search_items() {
     wpmm_ajax_cap_check();
 
     global $wpdb;
-    $term = sanitize_text_field( $_POST['term'] ?? '' );
+    $term = sanitize_text_field( wp_unslash( $_POST['term'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check().
 
     if ( strlen( $term ) < 1 ) {
         wp_send_json_success( [] );

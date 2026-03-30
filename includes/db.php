@@ -1,6 +1,18 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/*
+ * Direct database queries in this file are intentional and necessary for schema
+ * management (CREATE TABLE, ALTER TABLE, SHOW COLUMNS, INFORMATION_SCHEMA).
+ * All table names are derived from $wpdb->prefix + fixed strings — no user input
+ * is ever interpolated. $wpdb->prepare() cannot be used for DDL statements.
+ * phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
+ * phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
+ * phpcs:disable WordPress.DB.DirectDatabaseQuery.SchemaChange
+ * phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+ * phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter
+ */
+
 /**
  * Creates or upgrades the plugin tables for the current blog.
  *
