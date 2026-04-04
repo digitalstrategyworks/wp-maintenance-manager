@@ -78,7 +78,7 @@ function wpmm_create_tables() {
                 DB_NAME, $table, $col
             ) );
             if ( empty( $exists ) ) {
-                $wpdb->query( $alter_sql );
+                $wpdb->query( $alter_sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- DDL ALTER TABLE; table names from $wpdb->prefix + fixed strings only.
             }
         }
     }

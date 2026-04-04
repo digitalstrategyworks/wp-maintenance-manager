@@ -20,11 +20,10 @@ function wpmm_ajax_cap_check() {
 function wpmm_ajax_run_update() {
     wpmm_ajax_cap_check();
 
-    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check() → check_ajax_referer().
-    $type       = sanitize_text_field( wp_unslash( $_POST['item_type']  ?? '' ) );
-    $slug       = sanitize_text_field( wp_unslash( $_POST['item_slug']  ?? '' ) );
-    $session_id = sanitize_text_field( wp_unslash( $_POST['session_id'] ?? '' ) );
-    $package    = esc_url_raw( wp_unslash( $_POST['package'] ?? '' ) );
+    $type       = sanitize_text_field( wp_unslash( $_POST['item_type']  ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check().
+    $slug       = sanitize_text_field( wp_unslash( $_POST['item_slug']  ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    $session_id = sanitize_text_field( wp_unslash( $_POST['session_id'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    $package    = esc_url_raw( wp_unslash( $_POST['package'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
     if ( ! $type || ! $slug ) {
         wp_send_json_error( 'Missing parameters.' );
@@ -40,10 +39,9 @@ function wpmm_ajax_run_update() {
 function wpmm_ajax_send_email() {
     wpmm_ajax_cap_check();
 
-    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check().
-    $to       = sanitize_email( wp_unslash( $_POST['to_email'] ?? '' ) );
-    $subject  = sanitize_text_field( wp_unslash( $_POST['subject']  ?? '' ) );
-    $admin_id = absint( $_POST['admin_id'] ?? 0 );
+    $to       = sanitize_email( wp_unslash( $_POST['to_email'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check().
+    $subject  = sanitize_text_field( wp_unslash( $_POST['subject']  ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    $admin_id = absint( $_POST['admin_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
     // Session resolution strategy (in priority order):
     // 1. session_id explicitly posted (same-page flow from Updates page).
@@ -106,7 +104,7 @@ function wpmm_ajax_resend_email() {
 
     global $wpdb;
     $email_id = absint( $_POST['email_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check().
-    $row      = $wpdb->get_row( $wpdb->prepare(
+    $row      = $wpdb->get_row( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         "SELECT * FROM {$wpdb->prefix}wpmm_email_log WHERE id = %d", $email_id
     ) );
 
@@ -119,7 +117,7 @@ function wpmm_ajax_resend_email() {
     // Use the stored session_id to fetch the original log entries.
     $body = $row->body; // fallback: use stored body if we can't rebuild
     if ( ! empty( $row->session_id ) ) {
-        $log_entries = $wpdb->get_results( $wpdb->prepare(
+        $log_entries = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             "SELECT * FROM {$wpdb->prefix}wpmm_update_log
              WHERE session_id = %s ORDER BY updated_at ASC",
             $row->session_id
@@ -152,7 +150,7 @@ function wpmm_ajax_get_email_body() {
 
     global $wpdb;
     $email_id = absint( $_POST['email_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified via wpmm_ajax_cap_check().
-    $row      = $wpdb->get_row( $wpdb->prepare(
+    $row      = $wpdb->get_row( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         "SELECT * FROM {$wpdb->prefix}wpmm_email_log WHERE id = %d",
         $email_id
     ) );
@@ -164,7 +162,7 @@ function wpmm_ajax_get_email_body() {
     // Rebuild body from log entries if we have a session_id stored.
     $body = $row->body;
     if ( ! empty( $row->session_id ) ) {
-        $log_entries = $wpdb->get_results( $wpdb->prepare(
+        $log_entries = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             "SELECT * FROM {$wpdb->prefix}wpmm_update_log
              WHERE session_id = %s ORDER BY updated_at ASC",
             $row->session_id
@@ -196,7 +194,7 @@ function wpmm_ajax_search_items() {
         wp_send_json_success( [] );
     }
 
-    $results = $wpdb->get_col( $wpdb->prepare(
+    $results = $wpdb->get_col( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         "SELECT DISTINCT item_name
          FROM {$wpdb->prefix}wpmm_update_log
          WHERE item_name LIKE %s

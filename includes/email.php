@@ -256,7 +256,7 @@ function wpmm_send_email( $to, $subject, $body, $admin_id = 0 ) {
     $last_session     = get_option( 'wpmm_last_session', [] );
     $email_session_id = $last_session['session_id'] ?? '';
 
-    $result = $wpdb->insert(
+    $result = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $wpdb->prefix . 'wpmm_email_log',
         [
             'session_id' => $email_session_id,

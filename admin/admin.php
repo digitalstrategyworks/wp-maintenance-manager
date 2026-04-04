@@ -306,7 +306,7 @@ function wpmm_render_dashboard() {
 
     // Most recent update session
     $log_table   = $wpdb->prefix . 'wpmm_update_log';
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is safe (prefix + fixed string), no user input involved.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- table name is safe (prefix + fixed string), no user input involved.
     $last_row    = $wpdb->get_row( "SELECT updated_at, COUNT(*) AS total, SUM(status='success') AS successes, SUM(status!='success') AS failures FROM {$log_table} ORDER BY updated_at DESC LIMIT 1" );
     $last_update = $last_row && $last_row->updated_at
         ? date_i18n( 'F j, Y 	 g:i A', strtotime( $last_row->updated_at ) )
@@ -581,11 +581,10 @@ function wpmm_render_log() {
     wpmm_cap_gate();
     global $wpdb;
 
-    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter params on admin-only page; no state change occurs.
-    $log_search = sanitize_text_field( wp_unslash( $_GET['log_search'] ?? '' ) );
-    $log_from   = sanitize_text_field( wp_unslash( $_GET['log_from']   ?? '' ) );
-    $log_to     = sanitize_text_field( wp_unslash( $_GET['log_to']     ?? '' ) );
-    $sess_page  = max( 1, absint( $_GET['sess_page'] ?? 1 ) );
+    $log_search = sanitize_text_field( wp_unslash( $_GET['log_search'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter, no state change.
+    $log_from   = sanitize_text_field( wp_unslash( $_GET['log_from']   ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $log_to     = sanitize_text_field( wp_unslash( $_GET['log_to']     ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $sess_page  = max( 1, absint( $_GET['sess_page'] ?? 1 ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $log_table  = $wpdb->prefix . 'wpmm_update_log';
     $page_url   = wpmm_subpage_url( WPMM_SLUG_LOG );
 
@@ -609,10 +608,10 @@ function wpmm_render_log() {
 
     // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is safe (prefix + fixed string); user values are passed via prepare() args.
     $sql  = "SELECT * FROM {$log_table} {$where} ORDER BY updated_at DESC";
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $sql built from prefix+fixed table, user values via prepare() args.
     $rows = $args
-        ? $wpdb->get_results( $wpdb->prepare( $sql, $args ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-        : $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ? $wpdb->get_results( $wpdb->prepare( $sql, $args ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        : $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
     // Group rows into sessions in PHP.
     $sessions      = [];
@@ -1014,9 +1013,8 @@ function wpmm_render_email() {
 
     $saved_email  = get_option( 'wpmm_client_email', '' );
     $email_table  = $wpdb->prefix . 'wpmm_email_log';
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- table name is safe (prefix + fixed string).
-    $email_rows   = $wpdb->get_results(
-        "SELECT * FROM {$email_table} ORDER BY sent_at DESC LIMIT 50"
+    $email_rows   = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        "SELECT * FROM {$email_table} ORDER BY sent_at DESC LIMIT 50" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
     );
     ?>
     <div class="wpmm-wrap">
