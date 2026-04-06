@@ -72,16 +72,14 @@ function wpmm_ajax_send_email() {
         $switched = true;
     }
 
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
     if ( $session_id ) {
-        $log_entries = $wpdb->get_results( $wpdb->prepare(
+        $log_entries = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             "SELECT * FROM {$wpdb->prefix}wpmm_update_log WHERE session_id = %s ORDER BY updated_at ASC",
             $session_id
         ) );
     } else {
         // No session at all — use the most recent 100 entries.
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $log_entries = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wpmm_update_log ORDER BY updated_at DESC LIMIT 100" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $log_entries = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wpmm_update_log ORDER BY updated_at DESC LIMIT 100" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
     }
 
     if ( $switched ) {
@@ -92,10 +90,10 @@ function wpmm_ajax_send_email() {
     $update_note = sanitize_textarea_field( wp_unslash( $_POST['update_note'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
     // Manual updates added on the Email Reports page.
-    $manual_raw     = isset( $_POST['manual_entries'] ) ? wp_unslash( $_POST['manual_entries'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    $manual_raw     = isset( $_POST['manual_entries'] ) ? sanitize_text_field( wp_unslash( $_POST['manual_entries'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
     $manual_entries = [];
     if ( $manual_raw ) {
-        $decoded = json_decode( sanitize_text_field( $manual_raw ), true );
+        $decoded = json_decode( $manual_raw, true );
         if ( is_array( $decoded ) ) {
             foreach ( $decoded as $entry ) {
                 $manual_entries[] = [

@@ -1,6 +1,6 @@
 # Site Maintenance Manager
 
-**Version:** 1.5.7  
+**Version:** 1.5.8  
 **Author:** [Tony Zeoli](https://digitalstrategyworks.com)  
 **License:** [GPL-2.0+](https://www.gnu.org/licenses/gpl-2.0.html)  
 **Requires WordPress:** 5.8+  
