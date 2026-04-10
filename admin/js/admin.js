@@ -1175,4 +1175,93 @@ jQuery(function ($) {
     })();
 
 
+    // =========================================================================
+    // REMOTE API KEY (Settings page)
+    // =========================================================================
+    (function () {
+        // Copy key to clipboard
+        $(document).on('click', '#wpmm-copy-api-key', function () {
+            var key = $(this).data('key');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(key).then(function () {
+                    $('#wpmm-api-key-msg').html('<span style="color:#16a34a;">&#10003; Copied!</span>');
+                    setTimeout(function () { $('#wpmm-api-key-msg').html(''); }, 2000);
+                });
+            } else {
+                // Fallback for older browsers
+                var $tmp = $('<textarea>').val(key).appendTo('body').select();
+                document.execCommand('copy');
+                $tmp.remove();
+                $('#wpmm-api-key-msg').html('<span style="color:#16a34a;">&#10003; Copied!</span>');
+                setTimeout(function () { $('#wpmm-api-key-msg').html(''); }, 2000);
+            }
+        });
+
+        // Generate / rotate key
+        $(document).on('click', '#wpmm-generate-api-key', function () {
+            var $btn = $(this);
+            var $msg = $('#wpmm-api-key-msg');
+            var isRotate = $btn.text().indexOf('Rotate') !== -1;
+
+            if (isRotate && !window.confirm(
+                'Rotating the key will immediately invalidate the current key.\n\n' +
+                'Your hub site will need to be updated with the new key before it can ' +
+                'connect to this site again.\n\nContinue?'
+            )) { return; }
+
+            $btn.prop('disabled', true)
+                .html('<span class="dashicons dashicons-update wpmm-spin"></span> Generating…');
+
+            jQuery.post(wpmm.ajax_url, {
+                action: 'wpmm_generate_api_key',
+                nonce:  wpmm.nonce
+            })
+            .done(function (res) {
+                if (res && res.success) {
+                    $msg.html('<span style="color:#16a34a;">&#10003; Key generated. Reloading…</span>');
+                    setTimeout(function () { location.reload(); }, 1000);
+                } else {
+                    $btn.prop('disabled', false)
+                        .html('<span class="dashicons dashicons-update"></span> ' + (isRotate ? 'Rotate Key' : 'Generate API Key'));
+                    $msg.html('<span style="color:#dc2626;">Failed: ' + (res.data || 'unknown error') + '</span>');
+                }
+            })
+            .fail(function () {
+                $btn.prop('disabled', false)
+                    .html('<span class="dashicons dashicons-update"></span> ' + (isRotate ? 'Rotate Key' : 'Generate API Key'));
+                $msg.html('<span style="color:#dc2626;">Request failed.</span>');
+            });
+        });
+
+        // Revoke key
+        $(document).on('click', '#wpmm-revoke-api-key', function () {
+            if (!window.confirm(
+                'Revoking the API key will immediately disable all remote access to this site.\n\nContinue?'
+            )) { return; }
+
+            var $btn = $(this);
+            var $msg = $('#wpmm-api-key-msg');
+            $btn.prop('disabled', true);
+
+            jQuery.post(wpmm.ajax_url, {
+                action: 'wpmm_revoke_api_key',
+                nonce:  wpmm.nonce
+            })
+            .done(function (res) {
+                if (res && res.success) {
+                    $msg.html('<span style="color:#16a34a;">&#10003; Key revoked. Reloading…</span>');
+                    setTimeout(function () { location.reload(); }, 1000);
+                } else {
+                    $btn.prop('disabled', false);
+                    $msg.html('<span style="color:#dc2626;">Failed.</span>');
+                }
+            })
+            .fail(function () {
+                $btn.prop('disabled', false);
+                $msg.html('<span style="color:#dc2626;">Request failed.</span>');
+            });
+        });
+    })();
+
+
 }); // end jQuery ready

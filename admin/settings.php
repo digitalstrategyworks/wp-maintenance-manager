@@ -5,7 +5,35 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 // ── AJAX handler ──────────────────────────────────────────────────────────────
-add_action( 'wp_ajax_wpmm_save_settings', 'wpmm_ajax_save_settings' );
+add_action( 'wp_ajax_wpmm_save_settings',     'wpmm_ajax_save_settings' );
+add_action( 'wp_ajax_wpmm_generate_api_key',  'wpmm_ajax_generate_api_key' );
+add_action( 'wp_ajax_wpmm_revoke_api_key',    'wpmm_ajax_revoke_api_key' );
+
+function wpmm_ajax_generate_api_key() {
+    check_ajax_referer( 'wpmm_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Permission denied.' );
+    }
+    $new_key = wpmm_generate_api_key();
+    $s = wpmm_get_settings();
+    $s['api_key'] = $new_key;
+    wpmm_save_settings( $s );
+    wp_send_json_success( [
+        'api_key'  => $new_key,
+        'rest_url' => get_rest_url( null, 'smm/v1' ),
+    ] );
+}
+
+function wpmm_ajax_revoke_api_key() {
+    check_ajax_referer( 'wpmm_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Permission denied.' );
+    }
+    $s = wpmm_get_settings();
+    $s['api_key'] = '';
+    wpmm_save_settings( $s );
+    wp_send_json_success( [ 'message' => 'API key revoked. Remote access is now disabled.' ] );
+}
 
 function wpmm_ajax_save_settings() {
     check_ajax_referer( 'wpmm_nonce', 'nonce' );
@@ -45,6 +73,9 @@ function wpmm_render_settings() {
     $company_name     = $s['company_name'] ?? '';
     $client_email     = $s['client_email'] ?? get_option( 'wpmm_client_email', '' );
     $logo_url         = $s['logo_url']     ?? '';
+
+    // REST API key
+    $api_key         = $s['api_key'] ?? '';
 
     // SMTP settings
     $smtp_mailer     = $s['smtp_mailer']     ?? 'default';
@@ -280,6 +311,88 @@ function wpmm_render_settings() {
                         <span class="dashicons dashicons-yes"></span> Save Default Administrator
                     </button>
                     <span id="wpmm-admin-save-msg" class="wpmm-save-feedback"></span>
+                </div>
+            </div>
+
+            <!-- ── Remote API Access ───────────────────────────────── -->
+            <div class="wpmm-card" id="wpmm-api-card">
+                <h2 class="wpmm-card-title">
+                    <span class="dashicons dashicons-rest-api"></span> Remote API Access
+                </h2>
+                <p class="wpmm-card-desc">
+                    Generate an API key to allow a remote hub site to manage updates on this site
+                    via the Site Maintenance Manager REST API. Keep this key secure &mdash; anyone
+                    with it can run updates and send reports on your behalf.
+                </p>
+
+                <div class="wpmm-settings-group">
+                    <div class="wpmm-settings-group-label">
+                        <strong>API Key</strong>
+                        <span>Used by your hub site to authenticate requests.</span>
+                    </div>
+                    <div class="wpmm-settings-group-control">
+                        <?php if ( $api_key ) : ?>
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <code id="wpmm-api-key-display"
+                                      style="background:#f1f5f9;border:1px solid var(--wpmm-border);padding:8px 14px;border-radius:6px;font-size:13px;letter-spacing:.04em;flex:1;max-width:440px;word-break:break-all;">
+                                    <?php echo esc_html( $api_key ); ?>
+                                </code>
+                                <button type="button" id="wpmm-copy-api-key"
+                                        class="wpmm-btn wpmm-btn-secondary wpmm-btn-sm"
+                                        data-key="<?php echo esc_attr( $api_key ); ?>">
+                                    <span class="dashicons dashicons-clipboard"></span> Copy
+                                </button>
+                            </div>
+                            <p class="wpmm-hint" style="margin-top:8px;">
+                                REST API base URL:
+                                <code><?php echo esc_url( get_rest_url( null, 'smm/v1' ) ); ?></code>
+                            </p>
+                        <?php else : ?>
+                            <p style="color:var(--wpmm-gray);font-size:13px;margin:0 0 12px;">
+                                No API key generated yet. Remote API access is disabled until you generate a key.
+                            </p>
+                        <?php endif; ?>
+
+                        <div style="display:flex;align-items:center;gap:10px;margin-top:<?php echo $api_key ? '12px' : '0'; ?>">
+                            <button type="button" id="wpmm-generate-api-key"
+                                    class="wpmm-btn wpmm-btn-primary wpmm-btn-sm">
+                                <span class="dashicons dashicons-update"></span>
+                                <?php echo $api_key ? 'Rotate Key' : 'Generate API Key'; ?>
+                            </button>
+                            <?php if ( $api_key ) : ?>
+                                <button type="button" id="wpmm-revoke-api-key"
+                                        class="wpmm-btn wpmm-btn-secondary wpmm-btn-sm"
+                                        style="color:var(--wpmm-red);border-color:#fca5a5;">
+                                    <span class="dashicons dashicons-trash"></span> Revoke Key
+                                </button>
+                            <?php endif; ?>
+                            <span id="wpmm-api-key-msg" class="wpmm-save-feedback"></span>
+                        </div>
+
+                        <?php if ( $api_key ) : ?>
+                        <div class="wpmm-api-endpoints" style="margin-top:16px;background:#f8fafc;border:1px solid var(--wpmm-border);border-radius:6px;padding:14px 16px;">
+                            <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:var(--wpmm-blue);text-transform:uppercase;letter-spacing:.05em;">Available Endpoints</p>
+                            <?php
+                            $base = get_rest_url( null, 'smm/v1' );
+                            $endpoints = [
+                                [ 'GET',  '/status',      'Site health snapshot' ],
+                                [ 'GET',  '/updates',     'Scan for available updates' ],
+                                [ 'POST', '/update',      'Run a single update' ],
+                                [ 'GET',  '/log',         'Fetch paginated update log' ],
+                                [ 'POST', '/send-report', 'Send the maintenance email report' ],
+                                [ 'POST', '/rotate-key',  'Generate a new API key' ],
+                            ];
+                            foreach ( $endpoints as $ep ) :
+                            ?>
+                                <div style="display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--wpmm-border);font-size:12px;">
+                                    <code style="background:<?php echo $ep[0] === 'GET' ? '#dcfce7' : '#eff6ff'; ?>;color:<?php echo $ep[0] === 'GET' ? '#15803d' : '#1d4ed8'; ?>;padding:2px 6px;border-radius:3px;font-weight:700;min-width:38px;text-align:center;"><?php echo esc_html( $ep[0] ); ?></code>
+                                    <code style="color:var(--wpmm-blue2);"><?php echo esc_html( $base . $ep[1] ); ?></code>
+                                    <span style="color:var(--wpmm-gray);"><?php echo esc_html( $ep[2] ); ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
 
