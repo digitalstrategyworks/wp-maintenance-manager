@@ -6,7 +6,7 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        1.9.1.1
+Stable tag:        1.9.1.2
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
@@ -575,7 +575,7 @@ For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
 
-= 1.9.1.1 =
+= 1.9.1.2 =
 * Fix: Email report footer was overlapping and cutting off body content
   (update tables, external updates, spam activity, and administrator notes)
   when the report contained more than a few entries. The body div now uses
@@ -939,7 +939,7 @@ All errors and warnings reported by the Plugin Check plugin have been resolved:
 
 == Upgrade Notice ==
 
-= 1.9.1.1 =
+= 1.9.1.2 =
 Fixes email report footer overlapping body content. Update tables, external updates, spam activity, and admin notes now render fully above the footer. Recommended update for all users.
 
 = 1.9.1 =
@@ -948,7 +948,7 @@ Fixes themes missing from email reports, merges Update Notes into the Send card,
 = 1.9.0 =
 Plugin renamed to Greenskeeper. Adds Multisite Site Scope Selector for Updates, Spam Log, and Settings. No database changes. Internal prefixes unchanged — existing data is preserved.
 
-= 1.9.1.1 =
+= 1.9.1.2 =
 Fixes email report footer overlapping body content. Update tables, external updates, spam activity, and admin notes now render fully above the footer. Recommended update for all users.
 
 = 1.9.1 =
