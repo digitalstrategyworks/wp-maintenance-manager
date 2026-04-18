@@ -1,6 +1,6 @@
 # Greenskeeper
 
-**Version:** 1.9.0  
+**Version:** 1.9.1  
 **Author:** [Tony Zeoli](https://digitalstrategyworks.com)  
 **License:** [GPL-2.0+](https://www.gnu.org/licenses/gpl-2.0.html)  
 **Copyright:** © 2026 Digital Strategy Works LLC  
@@ -151,6 +151,8 @@ Greenskeeper replaces the ad hoc workflow of tab-switching between the WordPress
 - Lists any pending Avada Core / Avada Builder updates by name with new version numbers
 - Confirmation prompt when Avada theme is selected for update, reminding about companion plugin order
 - Direct link to Avada's Maintenance → Plugins & Add-Ons dashboard for checking Avada Patches (which are managed outside the standard WordPress update API)
+- **External update detection:** Avada Core and Avada Builder updates applied through the Avada plugins dashboard are automatically detected via `upgrader_process_complete` and logged as External sessions
+- **Avada Patches** use Avada's proprietary update mechanism and cannot be auto-detected — use the Additional Manual Updates field to document these
 
 ### Manage Plugin Access
 - Restrict the plugin to specific administrator accounts — client admins see nothing
@@ -635,6 +637,18 @@ Both. In Network Admin, the Site Scope Bar on the Updates page defaults to All S
 
 Yes. When the Email Reports page is in All Sites scope, the report is a consolidated email with a per-site section. When a single site is selected, the report covers only that site in the standard format.
 
+### Does Greenskeeper report updates made outside the plugin?
+
+Yes, from v1.9.1. Greenskeeper hooks into `upgrader_process_complete` which fires for any update going through WordPress's standard `Plugin_Upgrader` or `Theme_Upgrader`. This includes the WordPress Updates screen and the Avada plugins dashboard (Avada Core, Avada Builder). External updates are logged automatically with an "External" session badge and appear in the next report email.
+
+### How does Greenskeeper handle Avada updates?
+
+Two scenarios:
+
+**Avada theme, Avada Core, Avada Builder** — updates through the standard WordPress mechanism (including the Avada plugins dashboard) are auto-detected and logged.
+
+**Avada Patches** — applied through Avada's Maintenance → Plugins & Add-Ons dashboard using Avada's proprietary update system. These do not fire WordPress hooks and cannot be auto-detected. Document them with the Additional Manual Updates field on the Email Reports page.
+
 ### Does the spam filter work without an Akismet key?
 
 Yes. The local filtering layer runs entirely on your server with no external API calls. It catches the majority of automated bot spam using a honeypot field, submission time check, link count limit, keyword blocklist, IP blocklist, and duplicate detection. Adding an Akismet key activates a second layer of AI-powered cloud filtering for more comprehensive coverage.
@@ -690,6 +704,14 @@ For licensing enquiries: [tony@digitalstrategyworks.com](mailto:tony@digitalstra
 ---
 
 ## Changelog
+
+### 1.9.1
+- Feature: External update detection — updates made via WordPress Updates screen, Avada plugins dashboard, or any standard WP upgrade hook are auto-logged and included in reports
+- Avada Patches (Avada proprietary mechanism) not detectable — must use Additional Manual Updates
+- Fix: Themes missing from email reports (item_type normalised to accept both `theme` and `themes`)
+- Fix: Update Notes and Additional Manual Updates merged into the Send Maintenance Report card
+- Feature: Spam activity since last report included as a section in every maintenance email
+- Feature: Administrator First Name + Last Name shown in emails (falls back to display_name)
 
 ### 1.9.0
 - Rename: Greenskeeper → Greenskeeper (display only; wpmm_ internals unchanged)

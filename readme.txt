@@ -6,7 +6,7 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        1.9.0
+Stable tag:        1.9.1
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
@@ -111,6 +111,54 @@ Click **Resend** in the Sent Email History table. The email is rebuilt from the 
 
 == Frequently Asked Questions ==
 
+
+= Does Greenskeeper report updates made outside the plugin? =
+
+Yes, from version 1.9.1. Greenskeeper hooks into WordPress's
+upgrader_process_complete action, which fires for any update that runs
+through WordPress's standard Plugin_Upgrader or Theme_Upgrader — including
+updates made from the WordPress Updates screen, the Avada plugins dashboard
+(for Avada Core and Avada Builder), or any other standard WordPress update
+mechanism.
+
+These external updates are logged automatically with a session labelled
+"External" in the Update Log, and are included as a separate "Updates Made
+Outside Greenskeeper" section in the next maintenance report email.
+
+= How does Greenskeeper handle Avada theme updates? =
+
+Greenskeeper handles Avada-related updates in two ways depending on the
+update type:
+
+**Avada theme, Avada Core, and Avada Builder updates** — once your Avada
+license is registered, these appear in the standard WordPress updates list
+and can be updated from either the WordPress Updates screen or the Avada
+plugins dashboard. Both routes fire WordPress's standard upgrade hooks.
+Greenskeeper detects and logs these automatically and includes them in the
+maintenance report email.
+
+**Avada Patches** — patches applied through Avada's own Maintenance →
+Plugins & Add-Ons dashboard use Avada's proprietary update mechanism and
+do not fire WordPress's standard hooks. Greenskeeper cannot detect these
+automatically. They should be documented manually using the Additional
+Manual Updates field on the Email Reports page before sending the report.
+
+The Updates page also shows a contextual notice when the Avada theme is
+installed, explaining the required update order: Avada theme first, then
+Avada Core, then Avada Builder.
+
+= What is the difference between an external update and a manual update? =
+
+An **external update** is one that Greenskeeper detected automatically
+because it went through WordPress's standard update mechanism (Plugin_Upgrader
+or Theme_Upgrader). These are logged and included in the email without
+any action from you.
+
+A **manual update** is one that Greenskeeper cannot detect — for example
+an Avada Patch, a plugin updated through a vendor's own proprietary
+dashboard, or an FTP file replacement. These must be documented using the
+Additional Manual Updates field on the Email Reports page.
+
 = Does the plugin support Avada theme updates? =
 
 Yes, with important notes. Avada Core and Avada Builder appear in the standard
@@ -177,6 +225,30 @@ Comments → Spam queue.
 From the Spam Log you can: filter by rule or IP, add an IP to the blocklist
 with one click, delete individual entries, or clear the entire log.
 
+
+
+= Why were themes not showing in my email reports? =
+
+This was a bug in versions prior to 1.9.1. Theme update log entries stored
+with item_type as 'themes' (plural) were incorrectly bucketed into the
+Plugins section. Version 1.9.1 normalises both spellings. No data was lost
+— resending any previous email from the Sent Email History table will now
+show themes in the correct Themes section.
+
+= Does the email report include spam filter activity? =
+
+Yes, from version 1.9.1. Every maintenance report email includes a Spam
+Activity section listing comment attempts blocked since the last report was
+sent. Each entry shows when it was blocked, which rule caught it, the
+submitter's IP, and a content preview. If no spam was blocked since the
+last report the section is omitted entirely.
+
+= How does the administrator name appear in email reports? =
+
+From version 1.9.1 the email uses the administrator's First Name and Last
+Name from their WordPress user profile. Go to Users &rarr; Your Profile and
+fill in the First Name and Last Name fields, then click Update Profile. If
+no first or last name is saved, the Display Name is used as a fallback.
 
 = Who can access Greenskeeper? =
 
@@ -502,6 +574,34 @@ identity in a manner that implies endorsement or affiliation is prohibited.
 For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
+
+= 1.9.1 =
+* Fix: Theme updates were not appearing in email reports. The item_type
+  bucketing in wpmm_build_email_body() now accepts both 'theme' and
+  'themes' for full backward compatibility.
+* Fix: Update Notes and Additional Manual Updates were in separate cards
+  below the Send button, making it unclear they would be included in
+  the email. Both sections have been merged into the Send Maintenance
+  Report card above the Send button.
+* Feature: Spam activity since the last sent report is now included as
+  a section in every maintenance email. The Spam Activity section shows
+  each blocked comment attempt (when, rule, IP, content preview) that
+  occurred between the last sent report and the current send.
+* Feature: Administrator full name (First Name + Last Name from WordPress
+  user profile) now shown in email reports and the From: preview on the
+  Email Reports page. Falls back to display_name if no first/last name
+  is saved in the user profile.
+* Feature: External update detection via the upgrader_process_complete
+  hook. Updates made through the WordPress Updates screen, the Avada
+  plugins dashboard (Avada Core, Avada Builder), or any standard WordPress
+  update mechanism are now automatically logged with a session labelled
+  External. These appear in the Update Log with an External badge and are
+  included as a separate section in the next maintenance report email.
+* Note: Avada Patches applied via Avada's Maintenance → Plugins & Add-Ons
+  dashboard use a proprietary mechanism that does not fire WordPress update
+  hooks and cannot be auto-detected. Document these using Additional Manual
+  Updates.
+* Documentation: Tested up to WordPress 6.9. Changelog and FAQs updated.
 
 = 1.9.0 =
 * Rename: plugin renamed from Greenskeeper to Greenskeeper.
@@ -829,8 +929,14 @@ All errors and warnings reported by the Plugin Check plugin have been resolved:
 
 == Upgrade Notice ==
 
+= 1.9.1 =
+Fixes themes missing from email reports, merges Update Notes into the Send card, adds spam activity section to emails, and shows administrator full name. No database changes.
+
 = 1.9.0 =
 Plugin renamed to Greenskeeper. Adds Multisite Site Scope Selector for Updates, Spam Log, and Settings. No database changes. Internal prefixes unchanged — existing data is preserved.
+
+= 1.9.1 =
+Fixes themes missing from email reports, merges Update Notes into the Send card, adds spam activity section to emails, and shows administrator full name. No database changes.
 
 = 1.9.0 =
 Plugin renamed to Greenskeeper. All database tables and internal prefixes unchanged — no data migration required. Adds multisite network scope selector for Updates, Spam Log, and Spam Filter settings.

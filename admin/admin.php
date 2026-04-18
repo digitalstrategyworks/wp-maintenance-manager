@@ -1225,6 +1225,7 @@ function wpmm_render_log() {
                     $dt            = new DateTime( $first->updated_at );
                     $date_label    = $dt->format( 'F j, Y' );
                     $time_label    = $dt->format( 'g:i A' );
+                    $is_external   = ( strpos( $key, 'ext-' ) === 0 );
                     $success_count = 0;
                     $fail_count    = 0;
                     foreach ( $items as $r ) {
@@ -1244,6 +1245,9 @@ function wpmm_render_log() {
                                     <span class="wpmm-session-time"><?php echo esc_html( $time_label ); ?></span>
                                     <?php if ( $is_legacy ) : ?>
                                         <span class="wpmm-badge wpmm-badge-legacy">Legacy</span>
+                                    <?php endif; ?>
+                                    <?php if ( $is_external ) : ?>
+                                        <span class="wpmm-badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:10px;">External</span>
                                     <?php endif; ?>
                                 </span>
                             </span>
@@ -1537,7 +1541,14 @@ function wpmm_render_email() {
                         <?php
                         $ls = get_option( 'wpmm_last_session', [] );
                         $perf_admin = wpmm_get_default_admin();
-                        $from_label = $perf_admin ? ( $perf_admin->display_name . ' <' . $perf_admin->user_email . '>' ) : get_option( 'admin_email' );
+                        if ( $perf_admin ) {
+                            $first_name = get_user_meta( $perf_admin->ID, 'first_name', true );
+                            $last_name  = get_user_meta( $perf_admin->ID, 'last_name',  true );
+                            $full_name  = trim( $first_name . ' ' . $last_name ) ?: $perf_admin->display_name;
+                            $from_label = $full_name . ' <' . $perf_admin->user_email . '>';
+                        } else {
+                            $from_label = get_option( 'admin_email' );
+                        }
                         ?>
                         <span><strong>From:</strong> <?php echo esc_html( $from_label ); ?></span>
                         <?php if ( ! empty( $ls['session_id'] ) ) : ?>
@@ -1556,103 +1567,97 @@ function wpmm_render_email() {
                 <input type="hidden" id="wpmm-last-session-id"
                     value="<?php echo esc_attr( isset( $ls['session_id'] ) ? $ls['session_id'] : '' ); ?>">
 
+                <hr style="border:none;border-top:1px solid var(--wpmm-border);margin:20px 0;">
+
+                <!-- Update Notes — merged into send card -->
+                <div class="wpmm-form-row">
+                    <label for="wpmm-update-notes">
+                        <strong>Update Notes</strong>
+                        <span style="font-weight:400;color:var(--wpmm-gray);margin-left:6px;">(optional — appended to the email above the footer)</span>
+                    </label>
+                    <textarea id="wpmm-update-notes"
+                              class="wpmm-input"
+                              rows="4"
+                              placeholder="e.g. Avada and its companion plugins were updated manually this week. These updates require license authentication through the Avada dashboard and cannot be applied automatically by Greenskeeper&hellip;"
+                              style="resize:vertical;line-height:1.6;"></textarea>
+                </div>
+
+                <hr style="border:none;border-top:1px solid var(--wpmm-border);margin:20px 0;">
+
+                <!-- Additional Manual Updates — merged into send card -->
+                <div>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;">
+                        Additional Manual Updates
+                        <span style="font-weight:400;color:var(--wpmm-gray);margin-left:6px;">(optional — plugins or themes updated outside Greenskeeper)</span>
+                    </label>
+                    <p class="wpmm-hint" style="margin-bottom:12px;">
+                        Use this for licensed plugins updated through their own dashboards (e.g. Avada, ACF Pro, Gravity Forms).
+                        These entries appear as a separate table in the email report.
+                    </p>
+
+                    <div id="wpmm-manual-rows">
+                        <!-- Repeater rows injected by JS -->
+                    </div>
+                    <div style="margin-top:10px;">
+                        <button type="button" class="wpmm-btn wpmm-btn-secondary wpmm-btn-sm" id="wpmm-add-manual-row">
+                            <span class="dashicons dashicons-plus-alt"></span> Add Manual Update
+                        </button>
+                    </div>
+
+                    <template id="wpmm-manual-row-template">
+                        <div class="wpmm-manual-row">
+                            <select class="wpmm-input wpmm-manual-select" data-field="name">
+                                <option value="">— Select plugin or theme —</option>
+                                <?php
+                                if ( ! function_exists( 'get_plugins' ) ) {
+                                    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+                                }
+                                $all_installed = get_plugins();
+                                foreach ( $all_installed as $file => $data ) :
+                                ?>
+                                    <option value="<?php echo esc_attr( $data['Name'] ); ?>"
+                                            data-version="<?php echo esc_attr( $data['Version'] ); ?>">
+                                        <?php echo esc_html( $data['Name'] ); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                                <?php
+                                $themes = wp_get_themes();
+                                foreach ( $themes as $slug => $theme ) :
+                                ?>
+                                    <option value="<?php echo esc_attr( $theme->get('Name') ); ?>"
+                                            data-version="<?php echo esc_attr( $theme->get('Version') ); ?>">
+                                        <?php echo esc_html( $theme->get('Name') ); ?> (Theme)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="wpmm-manual-versions">
+                                <div>
+                                    <label class="wpmm-manual-label">Previous Version</label>
+                                    <input type="text" class="wpmm-input wpmm-manual-old-version" data-field="old_version"
+                                           placeholder="e.g. 6.7.1" style="max-width:120px;">
+                                </div>
+                                <div>
+                                    <label class="wpmm-manual-label">Updated To</label>
+                                    <input type="text" class="wpmm-input wpmm-manual-new-version" data-field="new_version"
+                                           placeholder="e.g. 6.8.0" style="max-width:120px;">
+                                </div>
+                            </div>
+                            <button type="button" class="wpmm-btn wpmm-btn-secondary wpmm-btn-sm wpmm-manual-remove"
+                                    title="Remove this entry">
+                                <span class="dashicons dashicons-trash"></span>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+
+                <hr style="border:none;border-top:1px solid var(--wpmm-border);margin:20px 0;">
+
                 <div class="wpmm-toolbar">
                     <button class="wpmm-btn wpmm-btn-primary" id="wpmm-send-email-btn">
                         <span class="dashicons dashicons-email"></span> Send Report Email
                     </button>
                 </div>
                 <div id="wpmm-email-send-result"></div>
-            </div>
-
-            <!-- Update Notes -->
-            <div class="wpmm-card">
-                <h2 class="wpmm-card-title">
-                    <span class="dashicons dashicons-edit"></span> Update Notes
-                </h2>
-                <p class="wpmm-card-desc">
-                    Add a personal note to append to the bottom of this report email.
-                    Use this to communicate anything additional to your client &mdash;
-                    for example, notes about a manual update, a licensing issue, or any
-                    other context you would like to include alongside the report.
-                </p>
-                <div class="wpmm-form-row">
-                    <label for="wpmm-update-notes">Note to Recipient <span style="font-weight:400;color:var(--wpmm-gray);">(optional)</span></label>
-                    <textarea id="wpmm-update-notes"
-                              class="wpmm-input"
-                              rows="5"
-                              placeholder="e.g. Please note that Avada and its companion plugins were updated manually this week. These updates require license authentication through the Avada dashboard and cannot be applied automatically by Greenskeeper&hellip;"
-                              style="resize:vertical;line-height:1.6;"></textarea>
-                    <p class="wpmm-hint">Plain text only. This note will appear at the bottom of the email above the footer.</p>
-                </div>
-            </div>
-
-            <!-- Additional Manual Updates -->
-            <div class="wpmm-card" id="wpmm-manual-updates-card">
-                <h2 class="wpmm-card-title">
-                    <span class="dashicons dashicons-plus-alt"></span> Additional Manual Updates
-                </h2>
-                <p class="wpmm-card-desc" style="margin-bottom:16px;">
-                    Plugins or themes updated manually outside the control of Greenskeeper
-                    due to functional licensing issues that prevent this plugin from accessing the
-                    specific panels where these plugins are located in the plugin or theme admin.
-                    These entries will be included in the next email report sent above.
-                </p>
-
-                <div id="wpmm-manual-rows">
-                    <!-- Repeater rows injected by JS -->
-                </div>
-
-                <div style="margin-top:12px;">
-                    <button type="button" class="wpmm-btn wpmm-btn-secondary wpmm-btn-sm" id="wpmm-add-manual-row">
-                        <span class="dashicons dashicons-plus-alt"></span> Add Manual Update
-                    </button>
-                </div>
-
-                <!-- Hidden template row — cloned by JS -->
-                <template id="wpmm-manual-row-template">
-                    <div class="wpmm-manual-row">
-                        <select class="wpmm-input wpmm-manual-select" data-field="name">
-                            <option value="">— Select plugin or theme —</option>
-                            <?php
-                            if ( ! function_exists( 'get_plugins' ) ) {
-                                require_once ABSPATH . 'wp-admin/includes/plugin.php';
-                            }
-                            $all_installed = get_plugins();
-                            foreach ( $all_installed as $file => $data ) :
-                            ?>
-                                <option value="<?php echo esc_attr( $data['Name'] ); ?>"
-                                        data-version="<?php echo esc_attr( $data['Version'] ); ?>">
-                                    <?php echo esc_html( $data['Name'] ); ?>
-                                </option>
-                            <?php endforeach; ?>
-                            <?php
-                            $themes = wp_get_themes();
-                            foreach ( $themes as $slug => $theme ) :
-                            ?>
-                                <option value="<?php echo esc_attr( $theme->get('Name') ); ?>"
-                                        data-version="<?php echo esc_attr( $theme->get('Version') ); ?>">
-                                    <?php echo esc_html( $theme->get('Name') ); ?> (Theme)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div class="wpmm-manual-versions">
-                            <div>
-                                <label class="wpmm-manual-label">Previous Version</label>
-                                <input type="text" class="wpmm-input wpmm-manual-old-version" data-field="old_version"
-                                       placeholder="e.g. 6.7.1" style="max-width:120px;">
-                            </div>
-                            <div>
-                                <label class="wpmm-manual-label">Updated To</label>
-                                <input type="text" class="wpmm-input wpmm-manual-new-version" data-field="new_version"
-                                       placeholder="e.g. 6.8.0" style="max-width:120px;">
-                            </div>
-                        </div>
-                        <button type="button" class="wpmm-btn wpmm-btn-secondary wpmm-btn-sm wpmm-manual-remove"
-                                title="Remove this entry">
-                            <span class="dashicons dashicons-trash"></span>
-                        </button>
-                    </div>
-                </template>
             </div>
 
             <!-- Sent email history -->

@@ -464,3 +464,106 @@ function wpmm_interpret_theme_result( $result, $skin, $slug, $old_version ) {
     $msg  = ! empty( $msgs ) ? implode( ' ', $msgs ) : wpmm_explain_error( 'update_failed' )['detail'];
     return [ 'failed', '', 'update_failed', $msg ];
 }
+
+// =========================================================================
+// EXTERNAL UPDATE DETECTION
+// Hook into upgrader_process_complete to catch updates made outside
+// Greenskeeper — e.g. via the WordPress Updates screen, the Avada plugins
+// dashboard (for Avada Core / Avada Builder), or any other standard
+// WordPress upgrader mechanism.
+//
+// NOTE: Avada Patches (managed through Avada → Maintenance → Plugins &
+// Add-Ons) use Avada's own proprietary update mechanism and do NOT fire
+// this hook. Those must be recorded manually via Additional Manual Updates.
+// =========================================================================
+add_action( 'upgrader_process_complete', 'wpmm_catch_external_updates', 20, 2 );
+
+function wpmm_catch_external_updates( $upgrader, $hook_extra ) {
+    // Skip if this update was triggered by Greenskeeper itself — already logged.
+    if ( ! empty( $GLOBALS['wpmm_session_id'] ) ) {
+        return;
+    }
+
+    // Only handle plugin and theme updates — not core (handled separately).
+    $type = $hook_extra['type'] ?? '';
+    if ( ! in_array( $type, [ 'plugin', 'theme' ], true ) ) {
+        return;
+    }
+
+    // Collect the items that were updated.
+    $action = $hook_extra['action'] ?? '';
+    if ( $action !== 'update' ) {
+        return;
+    }
+
+    $items = [];
+    if ( $type === 'plugin' ) {
+        // bulk_plugins is set for multi-select; plugin is set for single.
+        if ( ! empty( $hook_extra['bulk'] ) && ! empty( $hook_extra['plugins'] ) ) {
+            $items = (array) $hook_extra['plugins'];
+        } elseif ( ! empty( $hook_extra['plugin'] ) ) {
+            $items = [ $hook_extra['plugin'] ];
+        }
+    } elseif ( $type === 'theme' ) {
+        if ( ! empty( $hook_extra['bulk'] ) && ! empty( $hook_extra['themes'] ) ) {
+            $items = (array) $hook_extra['themes'];
+        } elseif ( ! empty( $hook_extra['theme'] ) ) {
+            $items = [ $hook_extra['theme'] ];
+        }
+    }
+
+    if ( empty( $items ) ) {
+        return;
+    }
+
+    global $wpdb;
+
+    // Build a synthetic external session ID — one per calendar day so that
+    // multiple external runs on the same day group into a single session.
+    $session_id = 'ext-' . date( 'Ymd' );
+
+    if ( ! function_exists( 'get_plugins' ) ) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+    $all_plugins = get_plugins();
+
+    foreach ( $items as $item_slug ) {
+        if ( $type === 'plugin' ) {
+            $name        = isset( $all_plugins[ $item_slug ]['Name'] )
+                ? $all_plugins[ $item_slug ]['Name']
+                : $item_slug;
+            $new_version = isset( $all_plugins[ $item_slug ]['Version'] )
+                ? $all_plugins[ $item_slug ]['Version']
+                : '';
+        } else {
+            $theme       = wp_get_theme( $item_slug );
+            $name        = $theme->get( 'Name' ) ?: $item_slug;
+            $new_version = $theme->get( 'Version' ) ?: '';
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- legitimate insert to custom plugin table.
+        $wpdb->insert(
+            $wpdb->prefix . 'wpmm_update_log',
+            [
+                'session_id'  => $session_id,
+                'item_name'   => $name,
+                'item_type'   => $type,
+                'item_slug'   => $item_slug,
+                'old_version' => '', // not available via this hook — version already updated
+                'new_version' => $new_version,
+                'status'      => 'success',
+                'error_code'  => '',
+                'message'     => 'Updated externally (outside Greenskeeper).',
+                'updated_at'  => current_time( 'mysql' ),
+            ]
+        );
+    }
+
+    // Persist as last session so Email Reports picks it up automatically.
+    update_option( 'wpmm_last_session', [
+        'session_id' => $session_id,
+        'blog_id'    => get_current_blog_id(),
+        'updated_at' => current_time( 'mysql' ),
+    ], false );
+}
+

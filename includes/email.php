@@ -33,6 +33,15 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
         $perf_admin = wpmm_get_default_admin();
     }
 
+    // Build full name: First Last preferred; fall back to display_name.
+    $admin_display_name = '';
+    if ( $perf_admin ) {
+        $first = get_user_meta( $perf_admin->ID, 'first_name', true );
+        $last  = get_user_meta( $perf_admin->ID, 'last_name',  true );
+        $full  = trim( $first . ' ' . $last );
+        $admin_display_name = $full ?: $perf_admin->display_name;
+    }
+
     // ── Bucket entries by type ────────────────────────────────────────────────
     $core_rows   = [];
     $plugin_rows = [];
@@ -43,10 +52,11 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
             $type = isset( $entry->item_type ) ? strtolower( trim( $entry->item_type ) ) : '';
             if ( $type === 'core' ) {
                 $core_rows[] = $entry;
-            } elseif ( $type === 'theme' ) {
+            } elseif ( $type === 'theme' || $type === 'themes' ) {
+                // Accept both 'theme' and 'themes' for backwards compatibility
                 $theme_rows[] = $entry;
             } else {
-                // 'plugin', '' (empty), or anything else → treat as plugin
+                // 'plugin', 'plugins', '' (empty), or anything else → treat as plugin
                 $plugin_rows[] = $entry;
             }
         }
@@ -120,6 +130,92 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
 
     if ( $sections === '' ) {
         $sections = "<p style='color:#6b7280;font-size:13px;margin:24px 0;'>No update entries were found for this session.</p>";
+    }
+
+    // ── External updates since last report ───────────────────────────────────
+    // Updates run outside Greenskeeper (WP Updates screen, Avada dashboard, etc.)
+    $external_section = '';
+    if ( function_exists( 'wpmm_get_external_updates_since_last_report' ) ) {
+        $ext_rows = wpmm_get_external_updates_since_last_report();
+        if ( ! empty( $ext_rows ) ) {
+            $ext_html = '';
+            foreach ( $ext_rows as $er ) {
+                $ename   = esc_html( $er->item_name );
+                $enew    = esc_html( $er->new_version );
+                $etype   = esc_html( ucfirst( $er->item_type ) );
+                $ext_html .= "
+                <tr>
+                  <td style='padding:10px 14px;border-bottom:1px solid #e5e7eb;'>
+                    &#9989; <strong>{$ename}</strong>
+                    <br><small style='color:#9ca3af;'>{$etype}</small>
+                  </td>
+                  <td style='padding:10px 14px;border-bottom:1px solid #e5e7eb;text-align:right;white-space:nowrap;'>
+                    <span style='color:#16a34a;font-weight:700;'>Updated to {$enew}</span>
+                    <br><small style='color:#9ca3af;'>Updated outside Greenskeeper</small>
+                  </td>
+                </tr>";
+            }
+            $external_section = "
+        <h3 style='color:#1e3a5f;font-size:15px;margin:28px 0 10px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;'>&#128260; Updates Made Outside Greenskeeper</h3>
+        <p style='font-size:12px;color:#6b7280;margin:0 0 10px;'>The following updates were applied through the WordPress Updates screen, the Avada plugins dashboard, or another external tool. Greenskeeper detected these automatically via WordPress update hooks.</p>
+        <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;'>
+          <thead>
+            <tr style='background:#f0fdf4;'>
+              <th style='padding:9px 14px;text-align:left;font-size:12px;color:#166534;text-transform:uppercase;letter-spacing:.05em;'>Item</th>
+              <th style='padding:9px 14px;text-align:right;font-size:12px;color:#166534;text-transform:uppercase;letter-spacing:.05em;'>Status</th>
+            </tr>
+          </thead>
+          <tbody>{$ext_html}</tbody>
+        </table>
+        <p style='font-size:11px;color:#9ca3af;margin:6px 0 0;font-style:italic;'>Note: previous version numbers are not available for externally-triggered updates. Avada Patches applied through Avada&rsquo;s own maintenance dashboard are not detected here and should be documented using the Additional Manual Updates field.</p>";
+        }
+    }
+
+    // ── Spam activity since last report ──────────────────────────────────────
+    // Find the most recent sent email timestamp and query spam blocked since then.
+    $spam_section = '';
+    if ( function_exists( 'wpmm_get_spam_since_last_report' ) ) {
+        $spam_rows = wpmm_get_spam_since_last_report();
+        if ( ! empty( $spam_rows ) ) {
+            $rule_labels = [
+                'honeypot'       => 'Honeypot',
+                'too_fast'       => 'Submission Too Fast',
+                'blocked_ip'     => 'Blocked IP',
+                'keyword'        => 'Keyword Match',
+                'too_many_links' => 'Too Many Links',
+                'duplicate'      => 'Duplicate Comment',
+                'akismet'        => 'Akismet',
+            ];
+            $spam_rows_html = '';
+            foreach ( $spam_rows as $sr ) {
+                $rule    = esc_html( $rule_labels[ $sr->rule ] ?? $sr->rule );
+                $ip      = esc_html( $sr->author_ip );
+                $preview = esc_html( mb_substr( wp_strip_all_tags( $sr->comment_content ?? '' ), 0, 60 ) );
+                $when    = esc_html( date_i18n( 'M j g:i A', strtotime( $sr->blocked_at ) ) );
+                $spam_rows_html .= "
+                <tr>
+                  <td style='padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;white-space:nowrap;'>{$when}</td>
+                  <td style='padding:8px 12px;border-bottom:1px solid #e5e7eb;'><span style='font-size:11px;font-weight:700;color:#dc2626;'>{$rule}</span></td>
+                  <td style='padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:12px;font-family:monospace;color:#374151;'>{$ip}</td>
+                  <td style='padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>{$preview}</td>
+                </tr>";
+            }
+            $spam_count   = count( $spam_rows );
+            $spam_section = "
+        <h3 style='color:#1e3a5f;font-size:15px;margin:28px 0 10px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;'>&#128737; Spam Activity Since Last Report</h3>
+        <p style='font-size:12px;color:#6b7280;margin:0 0 10px;'>{$spam_count} comment attempt" . ( $spam_count === 1 ? '' : 's' ) . " blocked by the spam filter.</p>
+        <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;'>
+          <thead>
+            <tr style='background:#fef2f2;'>
+              <th style='padding:8px 12px;text-align:left;font-size:11px;color:#991b1b;text-transform:uppercase;letter-spacing:.05em;'>When</th>
+              <th style='padding:8px 12px;text-align:left;font-size:11px;color:#991b1b;text-transform:uppercase;letter-spacing:.05em;'>Rule</th>
+              <th style='padding:8px 12px;text-align:left;font-size:11px;color:#991b1b;text-transform:uppercase;letter-spacing:.05em;'>IP Address</th>
+              <th style='padding:8px 12px;text-align:left;font-size:11px;color:#991b1b;text-transform:uppercase;letter-spacing:.05em;'>Content Preview</th>
+            </tr>
+          </thead>
+          <tbody>{$spam_rows_html}</tbody>
+        </table>";
+        }
     }
 
     // ── Additional Manual Updates section ─────────────────────────────────────
@@ -207,10 +303,10 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
     // ── Header: Administered-by line ─────────────────────────────────────────
     $administered_by = '';
     if ( $perf_admin ) {
-        $admin_name      = esc_html( $perf_admin->display_name );
+        $admin_name      = esc_html( $admin_display_name );
         $administered_by = "<p style='color:#bfdbfe;font-size:13px;margin:8px 0 0;line-height:1.6;'>"
                          . "WordPress website updates administered by "
-                         . "<strong style='color:#fff;'>" . $admin_name . "</strong>.</p>";
+                         . "<strong style='color:#fff;'>" . $admin_display_name . "</strong>.</p>";
     }
 
     // ── Divider between site block and brand row ──────────────────────────────
@@ -259,6 +355,8 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
       <h2 style="color:#1e3a5f;margin:0 0 6px;font-size:18px;font-family:Georgia,serif;">Weekly WordPress Maintenance Report</h2>
       <p style="color:#6b7280;font-size:13px;margin:0 0 4px;">The following updates were performed on your site.</p>
       ' . $sections . '
+      ' . $external_section . '
+      ' . $spam_section . '
     </div>
 
     ' . ( $update_note_block ) . '
@@ -272,6 +370,77 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
   </div>
 </body>
 </html>';
+}
+
+
+/**
+ * Return external update log entries (session_id starting with 'ext-')
+ * that occurred since the last sent email report.
+ * These are updates run outside Greenskeeper — via the WP Updates screen,
+ * the Avada plugins dashboard, etc.
+ */
+function wpmm_get_external_updates_since_last_report() {
+    global $wpdb;
+    $log_table   = $wpdb->prefix . 'wpmm_update_log';
+    $email_table = $wpdb->prefix . 'wpmm_email_log';
+
+    // Find the most recent successfully sent email.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $last_sent = $wpdb->get_var(
+        "SELECT sent_at FROM {$email_table} WHERE status = 'sent' ORDER BY sent_at DESC LIMIT 1" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+    );
+
+    if ( $last_sent ) {
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$log_table}
+             WHERE session_id LIKE %s
+               AND updated_at > %s
+             ORDER BY updated_at ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            'ext-%',
+            $last_sent
+        ) );
+    }
+
+    // No previous report — show all external entries.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    return $wpdb->get_results( $wpdb->prepare(
+        "SELECT * FROM {$log_table}
+         WHERE session_id LIKE %s
+         ORDER BY updated_at ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        'ext-%'
+    ) );
+}
+
+
+/**
+ * Return spam log entries blocked since the last sent email report.
+ * Limited to 50 rows to keep the email a reasonable length.
+ */
+function wpmm_get_spam_since_last_report() {
+    global $wpdb;
+    $spam_table  = $wpdb->prefix . 'wpmm_spam_log';
+    $email_table = $wpdb->prefix . 'wpmm_email_log';
+
+    // Find the most recent successfully sent email timestamp.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $last_sent = $wpdb->get_var(
+        "SELECT sent_at FROM {$email_table} WHERE status = 'sent' ORDER BY sent_at DESC LIMIT 1" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+    );
+
+    if ( $last_sent ) {
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$spam_table} WHERE blocked_at > %s ORDER BY blocked_at DESC LIMIT 50", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $last_sent
+        ) );
+    }
+
+    // No previous report — show last 50 all-time.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    return $wpdb->get_results(
+        "SELECT * FROM {$spam_table} ORDER BY blocked_at DESC LIMIT 50" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+    );
 }
 
 /**
