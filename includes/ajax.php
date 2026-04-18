@@ -123,6 +123,9 @@ function wpmm_ajax_send_email() {
     $result = wpmm_send_email( $to, $subject, $body, $admin_id );
 
     // ── All-Sites network email mode ──────────────────────────────────────────
+    // NOTE: This check must come AFTER the single-site send above so that
+    // non-network installs always use the path above. On network installs in
+    // All-Sites mode, the network email overwrites $result and returns early.
     $network_all = ( isset( $_POST['network_all'] ) && (int) $_POST['network_all'] === 1 ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
     if ( is_multisite() && $network_all ) {
         // Gather log entries from every site that had a session recently.

@@ -498,14 +498,29 @@ function wpmm_catch_external_updates( $upgrader, $hook_extra ) {
 
     $items = [];
     if ( $type === 'plugin' ) {
-        // bulk_plugins is set for multi-select; plugin is set for single.
-        if ( ! empty( $hook_extra['bulk'] ) && ! empty( $hook_extra['plugins'] ) ) {
+        // WordPress passes plugin slugs in several different structures
+        // depending on whether the update was bulk, single, or via a direct call.
+        // We check all known keys to cover every case.
+        if ( ! empty( $hook_extra['plugins'] ) ) {
+            // Bulk update — WordPress passes an array under 'plugins'
+            // whether or not 'bulk' is set.
             $items = (array) $hook_extra['plugins'];
         } elseif ( ! empty( $hook_extra['plugin'] ) ) {
+            // Single plugin update — WordPress passes a string under 'plugin'.
             $items = [ $hook_extra['plugin'] ];
+        } else {
+            // Last resort: ask the upgrader object which plugin it just updated.
+            // Plugin_Upgrader stores the plugin file in skin->plugin_info or
+            // in the result array after a successful run.
+            if ( method_exists( $upgrader, 'plugin_info' ) ) {
+                $detected = $upgrader->plugin_info();
+                if ( $detected ) {
+                    $items = [ $detected ];
+                }
+            }
         }
     } elseif ( $type === 'theme' ) {
-        if ( ! empty( $hook_extra['bulk'] ) && ! empty( $hook_extra['themes'] ) ) {
+        if ( ! empty( $hook_extra['themes'] ) ) {
             $items = (array) $hook_extra['themes'];
         } elseif ( ! empty( $hook_extra['theme'] ) ) {
             $items = [ $hook_extra['theme'] ];
