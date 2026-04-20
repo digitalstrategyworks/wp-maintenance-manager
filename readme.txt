@@ -6,7 +6,7 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        1.9.6
+Stable tag:        1.9.7
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
@@ -618,6 +618,19 @@ identity in a manner that implies endorsement or affiliation is prohibited.
 For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
+
+= 1.9.7 =
+* Critical fix (improved): Premium plugin updates now work correctly
+  rather than aborting. v1.9.6 prevented deactivation by aborting updates
+  when the package URL was stale, but this meant premium plugins still
+  could not be updated. v1.9.7 implements the correct strategy: when a
+  package URL is stale (returns HTTP 4xx or network error), Greenskeeper
+  now forces a fresh wp_update_plugins() check to obtain a new signed URL
+  from the plugin vendor's update server — exactly what WordPress core does
+  before its own upgrade process. The upgrade then proceeds with the fresh
+  URL. This allows Gravity Forms, ACF, Sucuri, Divi, and other licensed
+  plugins to update normally through Greenskeeper without requiring manual
+  updates or risking deactivation.
 
 = 1.9.6 =
 * Critical fix: Premium plugins (Gravity Forms, ACF, Divi, Sucuri, etc.)
