@@ -95,19 +95,30 @@ function wpmm_create_tables() {
                 DB_NAME, $table, $col
             ) );
             if ( empty( $exists ) ) {
-                $wpdb->query( $alter_sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- DDL ALTER TABLE; table names from $wpdb->prefix + fixed strings only.
+                // DDL statements (ALTER TABLE, CREATE INDEX) cannot use wpdb::prepare().
+                // prepare() is for parameterised DML queries (SELECT/INSERT/UPDATE/DELETE).
+                // The $alter_sql strings above are composed exclusively from:
+                //   $wpdb->prefix  — a trusted value set by WordPress on initialisation
+                //   hardcoded column names and SQL keywords — no user input ever appears here.
+                // This is the standard WordPress pattern for schema upgrades (see dbDelta source).
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $wpdb->query( $alter_sql );
             }
         }
     }
 
     // ── Index upgrade ─────────────────────────────────────────────────────────
-    $idx = $wpdb->get_results(
-        "SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
-         WHERE TABLE_SCHEMA = '{$wpdb->dbname}'
-           AND TABLE_NAME   = '{$log_table}'
-           AND INDEX_NAME   = 'session_id'"
-    );
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $idx = $wpdb->get_results( $wpdb->prepare(
+        'SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+         WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_NAME = %s',
+        DB_NAME,
+        $log_table,
+        'session_id'
+    ) );
     if ( empty( $idx ) ) {
+        // DDL — cannot use prepare(). Table name is $wpdb->prefix + fixed string.
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query( "ALTER TABLE {$log_table} ADD INDEX session_id (session_id)" );
     }
 }

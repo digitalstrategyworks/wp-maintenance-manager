@@ -6,7 +6,7 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        1.9.1.3
+Stable tag:        1.9.2
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
@@ -108,6 +108,50 @@ Click the eye icon in the Sent Email History table. The email renders in a full 
 Click **Resend** in the Sent Email History table. The email is rebuilt from the original session entries and sent again to the same recipient.
 
 ---
+
+== External Services ==
+
+This plugin connects to one external service: the Akismet API. All other
+functionality runs entirely on your own server with no external connections.
+
+= Akismet Spam Filtering (optional) =
+
+**What it is:** Akismet is a cloud-based spam detection service operated by
+Automattic, Inc. Greenskeeper includes an optional integration that allows you
+to submit comment data to Akismet's API for spam classification.
+
+**This feature is entirely opt-in.** Akismet is only activated if you enter an
+Akismet API key in Greenskeeper → Settings → Spam Filter & Comments. If no key
+is entered, no data is ever sent to Akismet.
+
+**What data is sent and when:** When Akismet is enabled and a comment is
+submitted on your site, Greenskeeper sends the following data to Akismet's API:
+
+* Your site URL
+* The commenter's IP address
+* The commenter's browser user agent string
+* The HTTP referrer header from the comment request
+* The URL of the page the comment was submitted on
+* The comment type, author name, author email, author URL, and comment content
+
+This data is sent each time a new comment is submitted and passes Greenskeeper's
+local filters. If Akismet is unreachable, Greenskeeper fails open (allows the
+comment through) rather than blocking it.
+
+Additionally, when you click "Verify & Save Key" in Settings, your Akismet API
+key and your site URL are sent to Akismet's verification endpoint to confirm the
+key is valid.
+
+**Akismet's terms of service and privacy policy:**
+
+* Terms of service: https://akismet.com/tos/
+* Privacy policy: https://automattic.com/privacy/
+
+**Important licensing note:** Akismet's free plan is for personal,
+non-commercial sites only. Any commercial or client site requires a paid
+Akismet plan. See https://akismet.com/plans/ for details. Greenskeeper provides
+the integration; you are responsible for holding a valid Akismet licence
+appropriate for your site's use.
 
 == Frequently Asked Questions ==
 
@@ -574,6 +618,23 @@ identity in a manner that implies endorsement or affiliation is prohibited.
 For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
+
+= 1.9.2 =
+* Security: Sanitized all $_SERVER variables (HTTP_USER_AGENT, HTTP_REFERER,
+  REMOTE_ADDR) with sanitize_text_field() + wp_unslash() before use.
+* Security: Wrapped remaining unprepared database queries in $wpdb->prepare().
+* Security: Converted INFORMATION_SCHEMA index check query to use
+  $wpdb->prepare() with parameterised values.
+* Documentation: Added == External Services == section to readme.txt
+  documenting the optional Akismet API integration — what data is sent,
+  when, and links to Akismet's terms of service and privacy policy.
+* Code: Added authoritative inline comments to updates.php explaining why
+  require_once of WP core admin files is legitimate, why set_site_transient()
+  is not a phone-home update checker (it is local WordPress cache), and why
+  Plugin_Upgrader::upgrade() and Theme_Upgrader::upgrade() do not change
+  plugin or theme activation status.
+* Code: Improved docblock on wpmm_get_scoped_site_id() explaining the
+  deliberate nonce exception for the read-only display-scope GET parameter.
 
 = 1.9.1.3 =
 * Fix: Email preview modal was cutting off body content at the footer.

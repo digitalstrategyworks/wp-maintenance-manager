@@ -147,6 +147,7 @@ function wpmm_filter_comment( $comment_data ) {
 
     // 1b. Submission time — comment submitted impossibly fast.
     $min_time = absint( $s['spam_min_time'] ?? 5 );
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- floatval() sanitizes the numeric timestamp
     if ( $min_time > 0 && isset( $_SERVER['REQUEST_TIME_FLOAT'] ) ) {
         // WordPress sets WPLANG cookie on page load; we use comment_post_ID
         // submit time baked into the nonce as a rough proxy. Since we can't
@@ -246,8 +247,10 @@ function wpmm_akismet_check( $api_key, $comment_data ) {
     $body     = [
         'blog'                 => $site_url,
         'user_ip'              => $comment_data['comment_author_IP']    ?? '',
-        'user_agent'           => $_SERVER['HTTP_USER_AGENT'] ?? '',  // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-        'referrer'             => $_SERVER['HTTP_REFERER']    ?? '',  // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+        // $_SERVER values can be manipulated by the request sender and must
+        // be sanitized before use, even though they are not user form input.
+        'user_agent'           => sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ),
+        'referrer'             => sanitize_text_field( wp_unslash( $_SERVER['HTTP_REFERER']    ?? '' ) ),
         'permalink'            => get_permalink( $comment_data['comment_post_ID'] ?? 0 ),
         'comment_type'         => $comment_data['comment_type']         ?? 'comment',
         'comment_author'       => $comment_data['comment_author']       ?? '',
@@ -381,7 +384,7 @@ function wpmm_log_spam( $rule, $comment_data = [] ) {
         [
             'blocked_at'      => current_time( 'mysql' ),
             'rule'            => sanitize_text_field( $rule ),
-            'author_ip'       => sanitize_text_field( $comment_data['comment_author_IP']    ?? ( $_SERVER['REMOTE_ADDR'] ?? '' ) ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+            'author_ip'       => sanitize_text_field( wp_unslash( $comment_data['comment_author_IP'] ?? ( $_SERVER['REMOTE_ADDR'] ?? '' ) ) ),
             'author_name'     => sanitize_text_field( $comment_data['comment_author']       ?? '' ),
             'author_email'    => sanitize_email(      $comment_data['comment_author_email'] ?? '' ),
             'author_url'      => esc_url_raw(         $comment_data['comment_author_url']   ?? '' ),

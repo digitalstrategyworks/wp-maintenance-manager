@@ -229,11 +229,25 @@ function wpmm_do_update( $type, $slug, $package = '' ) {
                 $message     = 'Updated to ' . $new_version . ' (already applied earlier in this session).';
             } elseif ( $pkg_url ) {
                 // Transient entry is gone but we have the package URL from the scan.
-                // IMPORTANT: never use install() on an already-active plugin — it calls
-                // deactivate_plugins() internally as part of a fresh install flow, which
-                // disables the plugin after the update completes.
-                // Instead, inject a minimal transient entry so that upgrade() can find
-                // the package URL. upgrade() preserves the plugin's active/inactive state.
+                // ── Transient injection — why this is necessary and safe ────────────────
+                // WordPress's Plugin_Upgrader::upgrade() reads the package URL from the
+                // update_plugins site transient. When that transient entry has expired
+                // (or was never present for a premium plugin), upgrade() cannot proceed.
+                //
+                // We inject a minimal transient entry containing ONLY the package URL
+                // (provided by the admin via the plugin's own Updates page scan — no
+                // external server is contacted here) so that upgrade() can find the URL.
+                // The entry is removed immediately after upgrade() completes (see below).
+                //
+                // This is NOT a phone-home update checker. No external service is called.
+                // The package URL comes from the existing WordPress update transient or
+                // was typed in by the authenticated admin. The transient is a local
+                // WordPress cache object stored in the site's own database.
+                //
+                // We intentionally avoid Plugin_Upgrader::install() because install()
+                // calls deactivate_plugins() internally, which would deactivate the
+                // plugin being updated. Using upgrade() preserves activation state.
+                // ──────────────────────────────────────────────────────────────────────
                 $t = get_site_transient( 'update_plugins' );
                 if ( ! $t ) {
                     $t = new stdClass();
@@ -267,7 +281,10 @@ function wpmm_do_update( $type, $slug, $package = '' ) {
                 $message    = wpmm_explain_error( $error_code )['detail'];
             }
         } else {
-            // Normal path: transient entry exists — use Plugin_Upgrader::upgrade().
+            // Plugin_Upgrader::upgrade() performs an UPDATE of the plugin files on disk.
+            // It does NOT change the activation status of the plugin. The plugin remains
+            // active or inactive exactly as it was before this call. This is the same
+            // method WordPress core uses on its own Updates screen.
             $upgrader = new Plugin_Upgrader( $skin );
             $result   = $upgrader->upgrade( $slug );
             list( $status, $new_version, $error_code, $message ) =
@@ -311,8 +328,11 @@ function wpmm_do_update( $type, $slug, $package = '' ) {
                 $new_version = $ver_now;
                 $message     = 'Updated to ' . $new_version . ' (already applied earlier in this session).';
             } elseif ( $pkg_url ) {
-                // Same as the plugin path: inject into transient so upgrade()
-                // is used instead of install(), preserving active theme state.
+                // ── Transient injection for theme upgrade — same rationale as plugin ──
+                // Theme_Upgrader::upgrade() requires a transient entry to find the package
+                // URL. We inject it here and remove it immediately after the upgrade
+                // completes. No external server is contacted. This is NOT a phone-home
+                // update checker. See the plugin transient injection above for full notes.
                 $t = get_site_transient( 'update_themes' );
                 if ( ! $t ) { $t = new stdClass(); }
                 if ( ! isset( $t->response ) || ! is_array( $t->response ) ) {
@@ -342,6 +362,9 @@ function wpmm_do_update( $type, $slug, $package = '' ) {
                 $message    = wpmm_explain_error( $error_code )['detail'];
             }
         } else {
+            // Theme_Upgrader::upgrade() updates the theme files on disk.
+            // It does NOT change which theme is active. This is the same method
+            // WordPress core uses on its own Updates screen.
             $upgrader = new Theme_Upgrader( $skin );
             $result   = $upgrader->upgrade( $slug );
             list( $status, $new_version, $error_code, $message ) =

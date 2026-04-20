@@ -93,7 +93,11 @@ function wpmm_ajax_send_email() {
         ) );
     } else {
         // No session at all — use the most recent 100 entries.
-        $log_entries = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wpmm_update_log ORDER BY updated_at DESC LIMIT 100" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $log_entries = $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}wpmm_update_log ORDER BY updated_at DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            100
+        ) );
     }
 
     if ( $switched ) {
@@ -135,8 +139,8 @@ function wpmm_ajax_send_email() {
             switch_to_blog( $bid );
             $site_entries = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $session_id
-                    ? $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}wpmm_update_log WHERE session_id = %s ORDER BY updated_at ASC", $session_id )
-                    : "SELECT * FROM {$wpdb->prefix}wpmm_update_log ORDER BY updated_at DESC LIMIT 50" // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                    ? $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}wpmm_update_log WHERE session_id = %s ORDER BY updated_at ASC", $session_id ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                    : $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}wpmm_update_log ORDER BY updated_at DESC LIMIT %d", 50 ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             );
             if ( ! empty( $site_entries ) ) {
                 $sites_data[] = [

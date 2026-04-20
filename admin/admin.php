@@ -316,12 +316,22 @@ function wpmm_user_can_access() {
 /**
  * Returns the currently-selected site ID from the ?site_id= URL parameter.
  * 0 means "All Sites". Only meaningful in Network Admin context.
+ *
+ * Why no nonce: this parameter controls display scope only — it changes
+ * which site's data is shown, but performs no write operation and has no
+ * side effects. The security boundary is enforced by wpmm_cap_gate() which
+ * runs before any page renderer, ensuring only authorised network admins
+ * can reach pages that call this function. Adding a nonce to a GET-based
+ * scope selector would break direct links, bookmarks, and browser history
+ * navigation — a deliberate WordPress.org-acknowledged exception for
+ * read-only display parameters. The value is sanitized with absint().
  */
 function wpmm_get_scoped_site_id() {
     if ( ! wpmm_is_network_context() ) {
         return get_current_blog_id();
     }
-    return absint( $_GET['site_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display scope, no side effects, see docblock.
+    return absint( $_GET['site_id'] ?? 0 );
 }
 
 /**
