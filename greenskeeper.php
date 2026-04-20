@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Greenskeeper
  * Description: Manage WordPress updates, filter comment spam, send branded email reports, and configure SMTP delivery — all from one dashboard. Supports single-site and Multisite.
- * Version:     1.9.2
+ * Version:     1.9.3
  * Author:      Tony Zeoli
  * Author URI:  https://digitalstrategyworks.com
  * License:     GPL-2.0+
@@ -21,11 +21,14 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'WPMM_VERSION',    '1.9.2' );
+define( 'WPMM_VERSION',    '1.9.3' );
 define( 'WPMM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPMM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-// Load plugin text domain for translations.
+// Note: load_plugin_textdomain() is included here at the request of the WordPress.org
+// plugin review team. Once the plugin is approved and hosted on WordPress.org,
+// WordPress will load translations automatically and this call becomes a no-op.
+// phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound
 add_action( 'init', function () {
     load_plugin_textdomain( 'greenskeeper', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 } );

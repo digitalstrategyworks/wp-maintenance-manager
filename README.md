@@ -1,6 +1,6 @@
 # Greenskeeper
 
-**Version:** 1.9.2  
+**Version:** 1.9.3  
 **Author:** [Tony Zeoli](https://digitalstrategyworks.com)  
 **License:** [GPL-2.0+](https://www.gnu.org/licenses/gpl-2.0.html)  
 **Copyright:** © 2026 Digital Strategy Works LLC  
@@ -704,6 +704,12 @@ For licensing enquiries: [tony@digitalstrategyworks.com](mailto:tony@digitalstra
 ---
 
 ## Changelog
+
+### 1.9.3
+- Fix: `date()` → `gmdate()` for timezone safety
+- Fix: `esc_sql()` applied to all table name variables across all files
+- Fix: Unprepared queries restructured/wrapped in `$wpdb->prepare()`
+- Fix: Short description trimmed to 150-character limit
 
 ### 1.9.2
 - Security: Sanitize all `$_SERVER` variables before use

@@ -558,7 +558,8 @@ function wpmm_catch_external_updates( $upgrader, $hook_extra ) {
 
     // Build a synthetic external session ID — one per calendar day so that
     // multiple external runs on the same day group into a single session.
-    $session_id = 'ext-' . date( 'Ymd' );
+    // gmdate() used instead of date() to avoid timezone-affected output (WPCS requirement).
+    $session_id = 'ext-' . gmdate( 'Ymd' );
 
     if ( ! function_exists( 'get_plugins' ) ) {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';

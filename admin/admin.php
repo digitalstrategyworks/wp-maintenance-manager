@@ -400,7 +400,7 @@ function wpmm_render_spam_log() {
         switch_to_blog( $wpmm_scope_site_id );
     }
 
-    $spam_table = $wpdb->prefix . 'wpmm_spam_log';
+    $spam_table = esc_sql( $wpdb->prefix . 'wpmm_spam_log' );
     $per_page   = 25;
     $curr_page  = max( 1, absint( $_GET['paged'] ?? 1 ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $offset     = ( $curr_page - 1 ) * $per_page;
@@ -438,14 +438,14 @@ function wpmm_render_spam_log() {
             $per_page, $offset
         ) );
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$spam_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $total = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . esc_sql( $wpdb->prefix . 'wpmm_spam_log' ) );
     }
 
     // Stats for the summary row
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-    $stats = $wpdb->get_results(
-        "SELECT rule, COUNT(*) AS cnt FROM {$spam_table} GROUP BY rule ORDER BY cnt DESC" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-    );
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $stats = $wpdb->get_results( 'SELECT rule, COUNT(*) AS cnt FROM ' . esc_sql( $wpdb->prefix . 'wpmm_spam_log' ) . ' GROUP BY rule ORDER BY cnt DESC' );
 
     if ( wpmm_is_network_context() && $wpmm_scope_site_id > 0 ) {
         restore_current_blog();
@@ -727,7 +727,7 @@ function wpmm_render_dashboard() {
     $default_admin = wpmm_get_default_admin();
 
     // Most recent update session
-    $log_table   = $wpdb->prefix . 'wpmm_update_log';
+    $log_table   = esc_sql( $wpdb->prefix . 'wpmm_update_log' );
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- table name is safe (prefix + fixed string), no user input involved.
     $last_row    = $wpdb->get_row( "SELECT updated_at, COUNT(*) AS total, SUM(status='success') AS successes, SUM(status!='success') AS failures FROM {$log_table} ORDER BY updated_at DESC LIMIT 1" );
     $last_update = $last_row && $last_row->updated_at
@@ -1052,7 +1052,7 @@ function wpmm_render_log() {
     $log_from   = sanitize_text_field( wp_unslash( $_GET['log_from']   ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $log_to     = sanitize_text_field( wp_unslash( $_GET['log_to']     ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $sess_page  = max( 1, absint( $_GET['sess_page'] ?? 1 ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-    $log_table  = $wpdb->prefix . 'wpmm_update_log';
+    $log_table  = esc_sql( $wpdb->prefix . 'wpmm_update_log' );
     $page_url   = wpmm_subpage_url( WPMM_SLUG_LOG );
 
     // Per-page limit — default 20, selectable to 50 or 100.
@@ -1485,7 +1485,7 @@ function wpmm_render_email() {
     global $wpdb;
 
     $saved_email  = get_option( 'wpmm_client_email', '' );
-    $email_table  = $wpdb->prefix . 'wpmm_email_log';
+    $email_table  = esc_sql( $wpdb->prefix . 'wpmm_email_log' );
     $email_rows   = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
         "SELECT * FROM {$email_table} ORDER BY sent_at DESC LIMIT 50" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
     );

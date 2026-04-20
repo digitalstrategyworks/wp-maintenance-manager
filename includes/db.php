@@ -23,8 +23,8 @@ function wpmm_create_tables() {
     global $wpdb;
     $charset = $wpdb->get_charset_collate();
 
-    $log_table   = $wpdb->prefix . 'wpmm_update_log';
-    $email_table = $wpdb->prefix . 'wpmm_email_log';
+    $log_table   = esc_sql( $wpdb->prefix . 'wpmm_update_log' );
+    $email_table = esc_sql( $wpdb->prefix . 'wpmm_email_log' );
 
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
@@ -58,7 +58,7 @@ function wpmm_create_tables() {
     ) {$charset};" );
 
     // ── wpmm_spam_log ─────────────────────────────────────────────────────────
-    $spam_table = $wpdb->prefix . 'wpmm_spam_log';
+    $spam_table = esc_sql( $wpdb->prefix . 'wpmm_spam_log' );
     dbDelta( "CREATE TABLE IF NOT EXISTS {$spam_table} (
         id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         blocked_at      DATETIME        NOT NULL,
@@ -128,8 +128,8 @@ function wpmm_create_tables() {
  */
 function wpmm_db_diagnostic() {
     global $wpdb;
-    $log_table   = $wpdb->prefix . 'wpmm_update_log';
-    $email_table = $wpdb->prefix . 'wpmm_email_log';
+    $log_table   = esc_sql( $wpdb->prefix . 'wpmm_update_log' );
+    $email_table = esc_sql( $wpdb->prefix . 'wpmm_email_log' );
 
     $info = [];
 

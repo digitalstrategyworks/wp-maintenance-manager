@@ -380,7 +380,7 @@ function wpmm_log_spam( $rule, $comment_data = [] ) {
     global $wpdb;
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
     $wpdb->insert(
-        $wpdb->prefix . 'wpmm_spam_log',
+        esc_sql( $wpdb->prefix . 'wpmm_spam_log' ),
         [
             'blocked_at'      => current_time( 'mysql' ),
             'rule'            => sanitize_text_field( $rule ),
@@ -446,9 +446,10 @@ function wpmm_ajax_delete_spam_entries() {
     }
 
     $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.NotPrepared
+    // Dynamic IN() clause — placeholders are %d repeated per ID count, built safely via array_fill().
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
     $deleted = $wpdb->query(
-        $wpdb->prepare( "DELETE FROM {$wpdb->prefix}wpmm_spam_log WHERE id IN ({$placeholders})", $ids ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $wpdb->prepare( 'DELETE FROM ' . esc_sql( $wpdb->prefix . 'wpmm_spam_log' ) . ' WHERE id IN (' . $placeholders . ')', $ids ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
     );
 
     wp_send_json_success( [ 'deleted' => $deleted ] );
@@ -464,8 +465,9 @@ function wpmm_ajax_clear_spam_log() {
         wp_send_json_error( 'Permission denied.' );
     }
     global $wpdb;
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-    $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}wpmm_spam_log" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+    // TRUNCATE is DDL and cannot use $wpdb->prepare(). Table name is $wpdb->prefix + fixed string — no user input.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.NotPrepared
+    $wpdb->query( 'TRUNCATE TABLE ' . esc_sql( $wpdb->prefix . 'wpmm_spam_log' ) );
     wp_send_json_success( 'Spam log cleared.' );
 }
 

@@ -380,8 +380,8 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
  */
 function wpmm_get_external_updates_since_last_report() {
     global $wpdb;
-    $log_table   = $wpdb->prefix . 'wpmm_update_log';
-    $email_table = $wpdb->prefix . 'wpmm_email_log';
+    $log_table   = esc_sql( $wpdb->prefix . 'wpmm_update_log' );
+    $email_table = esc_sql( $wpdb->prefix . 'wpmm_email_log' );
 
     // Find the most recent successfully sent email.
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -418,8 +418,8 @@ function wpmm_get_external_updates_since_last_report() {
  */
 function wpmm_get_spam_since_last_report() {
     global $wpdb;
-    $spam_table  = $wpdb->prefix . 'wpmm_spam_log';
-    $email_table = $wpdb->prefix . 'wpmm_email_log';
+    $spam_table  = esc_sql( $wpdb->prefix . 'wpmm_spam_log' );
+    $email_table = esc_sql( $wpdb->prefix . 'wpmm_email_log' );
 
     // Find the most recent successfully sent email timestamp.
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -477,7 +477,7 @@ function wpmm_send_email( $to, $subject, $body, $admin_id = 0 ) {
     $email_session_id = $last_session['session_id'] ?? '';
 
     $result = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-        $wpdb->prefix . 'wpmm_email_log',
+        esc_sql( $wpdb->prefix . 'wpmm_email_log' ),
         [
             'session_id' => $email_session_id,
             'to_email'   => $to,

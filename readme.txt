@@ -6,12 +6,12 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        1.9.2
+Stable tag:        1.9.3
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
 
-Manage WordPress updates across single sites or full Multisite networks, filter comment spam, send branded email reports, and configure SMTP delivery. Single-site and Multisite.
+Manage WordPress updates, filter comment spam, send branded email reports, and configure SMTP delivery — for single sites and Multisite networks.
 
 == Description ==
 
@@ -618,6 +618,23 @@ identity in a manner that implies endorsement or affiliation is prohibited.
 For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
+
+= 1.9.3 =
+* Fix: Replaced date() with gmdate() in external update session ID generation
+  to avoid timezone-affected output (WordPress coding standards requirement).
+* Fix: Applied esc_sql() to all table name variables ($spam_table, $log_table,
+  $email_table) across admin.php, email.php, rest-api.php, spam-filter.php,
+  and db.php to satisfy Plugin Check's UnescapedDBParameter requirement.
+* Fix: Restructured ternary database query in ajax.php that was incorrectly
+  triggering NotPrepared warnings due to static analysis limitations.
+* Fix: Wrapped remaining unprepared queries in $wpdb->prepare() in rest-api.php
+  (status endpoint, log endpoint COUNT, send-report fallback).
+* Fix: Added missing phpcs:ignore annotation for the dynamic IN() clause in
+  bulk spam log delete — a known false positive for array_fill() placeholders.
+* Fix: TRUNCATE TABLE query now uses esc_sql() on the table name.
+* Fix: Short description in readme.txt trimmed to meet the 150-character limit.
+* Code: Added explanatory comment for load_plugin_textdomain() clarifying it
+  was added at WordPress.org reviewer request and is a no-op once hosted.
 
 = 1.9.2 =
 * Security: Sanitized all $_SERVER variables (HTTP_USER_AGENT, HTTP_REFERER,

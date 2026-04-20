@@ -206,9 +206,12 @@ function wpmm_rest_status( WP_REST_Request $request ) {
     }
 
     // Most recent update session from log.
-    $log_table = $wpdb->prefix . 'wpmm_update_log';
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-    $last = $wpdb->get_row( "SELECT updated_at, COUNT(*) AS total FROM {$log_table} ORDER BY updated_at DESC LIMIT 1" );
+    $log_table = esc_sql( $wpdb->prefix . 'wpmm_update_log' );
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $last = $wpdb->get_row( $wpdb->prepare(
+        'SELECT updated_at, COUNT(*) AS total FROM ' . esc_sql( $wpdb->prefix . 'wpmm_update_log' ) . ' ORDER BY updated_at DESC LIMIT %d',
+        1
+    ) );
 
     $s = wpmm_get_settings();
 
@@ -296,7 +299,7 @@ function wpmm_rest_get_log( WP_REST_Request $request ) {
     $page       = max( 1, $request->get_param( 'page' ) );
     $session_id = $request->get_param( 'session_id' );
     $offset     = ( $page - 1 ) * $per_page;
-    $log_table  = $wpdb->prefix . 'wpmm_update_log';
+    $log_table  = esc_sql( $wpdb->prefix . 'wpmm_update_log' );
 
     if ( $session_id ) {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -316,7 +319,7 @@ function wpmm_rest_get_log( WP_REST_Request $request ) {
             $per_page, $offset
         ) );
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$log_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $total = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . esc_sql( $wpdb->prefix . 'wpmm_update_log' ) );
     }
 
     return rest_ensure_response( [
@@ -360,7 +363,7 @@ function wpmm_rest_send_report( WP_REST_Request $request ) {
     }
 
     // Fetch log entries.
-    $log_table = $wpdb->prefix . 'wpmm_update_log';
+    $log_table = esc_sql( $wpdb->prefix . 'wpmm_update_log' );
     if ( $session_id ) {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $log_entries = $wpdb->get_results( $wpdb->prepare(
@@ -369,9 +372,10 @@ function wpmm_rest_send_report( WP_REST_Request $request ) {
         ) );
     } else {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $log_entries = $wpdb->get_results( // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            "SELECT * FROM {$log_table} ORDER BY updated_at DESC LIMIT 100"
-        );
+        $log_entries = $wpdb->get_results( $wpdb->prepare(
+            'SELECT * FROM ' . esc_sql( $wpdb->prefix . 'wpmm_update_log' ) . ' ORDER BY updated_at DESC LIMIT %d',
+            100
+        ) );
     }
 
     $body   = wpmm_build_email_body( $log_entries, 0, [], $note );
