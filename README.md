@@ -1,6 +1,6 @@
 # Greenskeeper
 
-**Version:** 1.9.8  
+**Version:** 1.9.9  
 **Author:** [Tony Zeoli](https://digitalstrategyworks.com)  
 **License:** [GPL-2.0+](https://www.gnu.org/licenses/gpl-2.0.html)  
 **Copyright:** © 2026 Digital Strategy Works LLC  

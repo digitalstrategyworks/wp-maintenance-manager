@@ -6,7 +6,7 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        1.9.8
+Stable tag:        1.9.9
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
@@ -618,6 +618,16 @@ identity in a manner that implies endorsement or affiliation is prohibited.
 For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
+
+= 1.9.9 =
+* Diagnostic build: adds detailed debug output to the failed update
+  message when Plugin_Upgrader returns null, including skin error
+  messages, skin result, and retry outcome. Also adds opcache_reset()
+  and wp_clean_plugins_cache() before reading the new version on a
+  successful upgrade to prevent stale opcode cache from reporting the
+  wrong version. This version is intended for testing only and the
+  debug output will be removed in the next release once the AIOSEO Pro
+  root cause is confirmed.
 
 = 1.9.8 =
 * Fix: All In One SEO Pro (and similar plugins) was reporting "version

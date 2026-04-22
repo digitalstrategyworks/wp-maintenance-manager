@@ -477,7 +477,14 @@ function wpmm_do_update( $type, $slug, $package = '' ) {
  */
 function wpmm_interpret_plugin_result( $result, $skin, $slug, $old_version, $retry = true ) {
     if ( $result === true ) {
-        clearstatcache();
+        // Flush all caches before reading the new version — opcode cache
+        // (OPcache/APCu) can cause get_plugins() to return the old version
+        // header even after the new files are on disk.
+        if ( function_exists( 'opcache_reset' ) ) {
+            opcache_reset();
+        }
+        wp_clean_plugins_cache( true );
+        clearstatcache( true );
         $plugins     = get_plugins();
         $new_version = isset( $plugins[ $slug ]['Version'] ) ? $plugins[ $slug ]['Version'] : '';
         return [ 'success', $new_version, '', '' ];
@@ -485,8 +492,7 @@ function wpmm_interpret_plugin_result( $result, $skin, $slug, $old_version, $ret
 
     if ( is_null( $result ) ) {
         // Upgrader ran but nothing was written to disk.
-        // First check: maybe it actually succeeded (e.g. another process
-        // in the same batch already updated it).
+        // First check: maybe it actually succeeded already.
         clearstatcache();
         $plugins = get_plugins();
         $ver_now = isset( $plugins[ $slug ]['Version'] ) ? $plugins[ $slug ]['Version'] : $old_version;
@@ -494,9 +500,20 @@ function wpmm_interpret_plugin_result( $result, $skin, $slug, $old_version, $ret
             return [ 'success', $ver_now, '', 'Updated successfully (confirmed via version comparison).' ];
         }
 
-        // Version unchanged. The most common cause is a signed package URL
-        // that expired between our HEAD check and the actual download.
-        // Force a fresh update check to get a new URL and retry once.
+        // Collect everything the skin recorded for diagnostics.
+        $skin_errors   = $skin->get_errors()->get_error_messages();
+        $skin_messages = method_exists( $skin, 'get_upgrade_messages' ) ? $skin->get_upgrade_messages() : [];
+        $skin_result   = isset( $skin->result ) ? $skin->result : 'not set';
+        $skin_result_s = is_array( $skin_result ) ? wp_json_encode( $skin_result ) : var_export( $skin_result, true );
+
+        $diag = '[NULL result] slug=' . $slug
+            . ' | old=' . $old_version . ' | now=' . $ver_now
+            . ' | retry=' . ( $retry ? 'true' : 'false' )
+            . ' | skin_errors=' . ( $skin_errors ? implode( '; ', $skin_errors ) : 'none' )
+            . ' | skin_msgs=' . ( $skin_messages ? implode( '; ', $skin_messages ) : 'none' )
+            . ' | skin_result=' . $skin_result_s;
+
+        // Retry once with a freshly fetched package URL.
         if ( $retry ) {
             require_once ABSPATH . 'wp-admin/includes/update.php';
             delete_site_transient( 'update_plugins' );
@@ -504,17 +521,16 @@ function wpmm_interpret_plugin_result( $result, $skin, $slug, $old_version, $ret
 
             $update_plugins = get_site_transient( 'update_plugins' );
             if ( ! empty( $update_plugins->response[ $slug ]->package ) ) {
-                $fresh_pkg = $update_plugins->response[ $slug ]->package;
                 $skin2     = new WP_Ajax_Upgrader_Skin();
                 $upgrader2 = new Plugin_Upgrader( $skin2 );
                 $result2   = $upgrader2->upgrade( $slug );
-                // Recurse with $retry = false so we never loop more than once.
                 return wpmm_interpret_plugin_result( $result2, $skin2, $slug, $old_version, false );
             }
+            $diag .= ' | after_refresh=not_in_transient';
         }
 
         $code = 'wpmm_version_unchanged';
-        return [ 'failed', '', $code, wpmm_explain_error( $code )['detail'] ];
+        return [ 'failed', '', $code, wpmm_explain_error( $code )['detail'] . ' DEBUG: ' . $diag ];
     }
 
     if ( is_wp_error( $result ) ) {
