@@ -6,7 +6,7 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        2.0.5
+Stable tag:        2.0.6
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
@@ -618,6 +618,19 @@ identity in a manner that implies endorsement or affiliation is prohibited.
 For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
+
+= 2.0.6 =
+* Fix: Collateral plugin deactivation caused by WordPress's own error
+  recovery. When a plugin update fails mid-extraction (e.g. a file
+  copy failure due to server permissions), WordPress's upgrader calls
+  deactivate_plugins() as part of its rollback, which can deactivate
+  unrelated plugins in the same batch — such as Divi Machine being
+  deactivated when WP-Optimize failed. Greenskeeper now snapshots the
+  active plugin list before each update and restores any plugin that
+  was collaterally deactivated after the update completes. The plugin
+  being updated is excluded from the restore (its deactivation, if
+  any, is intentional). A notice is shown in the UI when restoration
+  occurs so the admin is aware it happened.
 
 = 2.0.5 =
 * Security fix: Cross-site AJAX capability bypass on multisite (#1).

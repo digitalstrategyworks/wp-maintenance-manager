@@ -481,7 +481,17 @@ jQuery(function ($) {
                         .addClass('wpmm-btn-success')
                         .removeClass('wpmm-btn-primary')
                         .prop('disabled', true);
-                    $status.html('<span class="wpmm-status-success">&#9989; Update Successful</span>');
+                    var successHtml = '<span class="wpmm-status-success">&#9989; Update Successful</span>';
+                    // If other plugins were collaterally deactivated by WordPress's
+                    // error recovery and Greenskeeper restored them, show a notice.
+                    if (res.data.collateral_restored && res.data.collateral_restored.length) {
+                        successHtml += '<div class="wpmm-status-warning" style="color:#b45309;margin-top:4px;font-size:12px;">' +
+                            '&#9888; WordPress deactivated ' + res.data.collateral_restored.length +
+                            ' other plugin(s) during this update — Greenskeeper restored them: ' +
+                            res.data.collateral_restored.map(function(p){ return escHtml(p); }).join(', ') +
+                            '</div>';
+                    }
+                    $status.html(successHtml);
                     $li.find('.wpmm-item-meta').text('Updated to version ' + res.data.new_version);
                 } else {
                     var msg = '';

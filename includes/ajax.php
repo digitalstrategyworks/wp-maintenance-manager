@@ -78,9 +78,43 @@ function wpmm_ajax_run_update() {
         $switched = true;
     }
 
+    // ── Active plugin snapshot ────────────────────────────────────────────────
+    // WordPress's upgrader calls deactivate_plugins() as part of its error
+    // recovery when an update fails mid-extraction (e.g. a file copy failure
+    // on another plugin in the same batch). This can deactivate plugins that
+    // were never part of the failing update — collateral deactivation.
+    //
+    // We snapshot all active plugins before the update and compare after.
+    // Any plugin that was active before but is inactive after — and was NOT
+    // the plugin we just updated — is restored to active. This prevents one
+    // plugin's file-permission failure from silently deactivating unrelated
+    // plugins like Divi Machine.
+    $active_before = (array) get_option( 'active_plugins', [] );
+    // ─────────────────────────────────────────────────────────────────────────
+
     $GLOBALS['wpmm_session_id'] = $session_id;
 
     $result = wpmm_do_update( $type, $slug, $package );
+
+    // ── Restore collaterally deactivated plugins ──────────────────────────────
+    if ( $type === 'plugin' ) {
+        $active_after   = (array) get_option( 'active_plugins', [] );
+        $deactivated    = array_diff( $active_before, $active_after );
+        $to_restore     = array_filter( $deactivated, function( $p ) use ( $slug ) {
+            // Never restore the plugin we just updated — its state is intentional.
+            return $p !== $slug;
+        } );
+
+        if ( ! empty( $to_restore ) ) {
+            // Re-activate the collaterally deactivated plugins.
+            $restored = activate_plugins( array_values( $to_restore ), '', is_multisite() );
+            // Log the restoration so the admin can see what happened.
+            if ( ! is_wp_error( $restored ) ) {
+                $result['collateral_restored'] = array_values( $to_restore );
+            }
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     if ( $switched ) {
         restore_current_blog();
