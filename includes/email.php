@@ -42,25 +42,33 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
         $admin_display_name = $full ?: $perf_admin->display_name;
     }
 
-    // ── Bucket entries by type ────────────────────────────────────────────────
-    $core_rows   = [];
-    $plugin_rows = [];
-    $theme_rows  = [];
+    // ── Group entries by session so multiple update runs appear as separate
+    //    date-labelled sections rather than one undifferentiated block.
+    //    This handles the case where plugins were updated Monday and themes
+    //    updated Wednesday — both batches show in a single email clearly
+    //    labelled with their respective dates and times.
+    $sessions_ordered = []; // [ session_key => [ 'date' => ..., 'entries' => [...] ] ]
 
     if ( is_array( $log_entries ) ) {
         foreach ( $log_entries as $entry ) {
-            $type = isset( $entry->item_type ) ? strtolower( trim( $entry->item_type ) ) : '';
-            if ( $type === 'core' ) {
-                $core_rows[] = $entry;
-            } elseif ( $type === 'theme' || $type === 'themes' ) {
-                // Accept both 'theme' and 'themes' for backwards compatibility
-                $theme_rows[] = $entry;
-            } else {
-                // 'plugin', 'plugins', '' (empty), or anything else → treat as plugin
-                $plugin_rows[] = $entry;
+            $session_key = ( ! empty( $entry->session_id ) )
+                ? $entry->session_id
+                : 'legacy-' . substr( $entry->updated_at ?? '', 0, 10 );
+
+            if ( ! isset( $sessions_ordered[ $session_key ] ) ) {
+                // Use the first entry's timestamp as the session date label.
+                $sessions_ordered[ $session_key ] = [
+                    'date'    => $entry->updated_at ?? '',
+                    'entries' => [],
+                ];
             }
+            $sessions_ordered[ $session_key ]['entries'][] = $entry;
         }
     }
+
+    // Determine whether to show session date headers — only when more than
+    // one distinct session is present in this email.
+    $multi_session = count( $sessions_ordered ) > 1;
 
     // ── Row builder ───────────────────────────────────────────────────────────
     $build_rows = function ( array $entries ) {
@@ -123,10 +131,43 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
         </table>";
     };
 
-    // ── Assemble update sections ──────────────────────────────────────────────
-    $sections = $build_section( '&#127758; WordPress Core', $core_rows )
-              . $build_section( '&#128268; Plugins',        $plugin_rows )
-              . $build_section( '&#127912; Themes',          $theme_rows );
+    // ── Assemble update sections — grouped by session with date headers ───────
+    $sections = '';
+
+    foreach ( $sessions_ordered as $session_key => $session_data ) {
+        $session_entries = $session_data['entries'];
+        $session_date    = $session_data['date'];
+
+        // Bucket this session's entries by type.
+        $core_rows   = [];
+        $plugin_rows = [];
+        $theme_rows  = [];
+
+        foreach ( $session_entries as $entry ) {
+            $type = isset( $entry->item_type ) ? strtolower( trim( $entry->item_type ) ) : '';
+            if ( $type === 'core' ) {
+                $core_rows[] = $entry;
+            } elseif ( $type === 'theme' || $type === 'themes' ) {
+                $theme_rows[] = $entry;
+            } else {
+                $plugin_rows[] = $entry;
+            }
+        }
+
+        // When multiple sessions are present, show a date header between them
+        // so the client can clearly see which updates happened on which date.
+        if ( $multi_session && $session_date ) {
+            $label = date_i18n( 'l, F j, Y \a\t g:i A', strtotime( $session_date ) );
+            $sections .= "
+        <div style='margin:32px 0 8px;padding:10px 16px;background:#f0f9ff;border-left:4px solid #2563eb;border-radius:0 6px 6px 0;'>
+          <span style='font-size:13px;font-weight:700;color:#1e3a5f;'>&#128197; Update Session: {$label}</span>
+        </div>";
+        }
+
+        $sections .= $build_section( '&#127758; WordPress Core', $core_rows );
+        $sections .= $build_section( '&#128268; Plugins',        $plugin_rows );
+        $sections .= $build_section( '&#127912; Themes',          $theme_rows );
+    }
 
     if ( $sections === '' ) {
         $sections = "<p style='color:#6b7280;font-size:13px;margin:24px 0;'>No update entries were found for this session.</p>";
@@ -390,23 +431,18 @@ function wpmm_get_external_updates_since_last_report() {
     );
 
     if ( $last_sent ) {
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
         return $wpdb->get_results( $wpdb->prepare(
-            "SELECT * FROM {$log_table}
-             WHERE session_id LIKE %s
-               AND updated_at > %s
-             ORDER BY updated_at ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            'SELECT * FROM ' . $log_table . " WHERE session_id LIKE %s AND updated_at > %s ORDER BY updated_at ASC",
             'ext-%',
             $last_sent
         ) );
     }
 
     // No previous report — show all external entries.
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
     return $wpdb->get_results( $wpdb->prepare(
-        "SELECT * FROM {$log_table}
-         WHERE session_id LIKE %s
-         ORDER BY updated_at ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        'SELECT * FROM ' . $log_table . ' WHERE session_id LIKE %s ORDER BY updated_at ASC',
         'ext-%'
     ) );
 }

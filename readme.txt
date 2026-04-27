@@ -6,7 +6,7 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        2.0.7
+Stable tag:        2.0.8
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
@@ -619,608 +619,60 @@ For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
 
+= 2.0.8 =
+Critical fix: network-activated plugins (Site Kit, Sucuri, Clarity) restored after collateral deactivation.
+Email: multiple sessions grouped by date with clear headers.
+Email history: live AJAX update after send. Unit tests added.
+
 = 2.0.7 =
-* Fix: Collateral plugin deactivation on retry (improved from v2.0.6).
-  v2.0.6 took a per-request snapshot which failed on retries — by the
-  time the retry fired, the collateral victim was already deactivated
-  so it didn't appear in the "before" snapshot. v2.0.7 persists the
-  pre-batch snapshot as a transient keyed to the session ID so that
-  retries restore from the original pre-batch active plugin state.
-  Also switched from activate_plugins() to direct option write to
-  bypass dependency validation checks that can silently fail when
-  Divi or another plugin is in a mid-update state during restore.
-* Feature: Backup warning modal shown before any update action. A
-  modal dialog prompts the user to confirm their site is backed up
-  before proceeding with any plugin, theme, or core update — either
-  a batch "Update Selected" run or an individual Update button click.
-  The modal is shown once per page load; after confirming, subsequent
-  updates in the same session proceed without interruption.
+Backup warning modal before any update. Collateral deactivation restore improved with session-keyed transient.
 
 = 2.0.6 =
-* Fix: Collateral plugin deactivation caused by WordPress's own error
-  recovery. When a plugin update fails mid-extraction (e.g. a file
-  copy failure due to server permissions), WordPress's upgrader calls
-  deactivate_plugins() as part of its rollback, which can deactivate
-  unrelated plugins in the same batch — such as Divi Machine being
-  deactivated when WP-Optimize failed. Greenskeeper now snapshots the
-  active plugin list before each update and restores any plugin that
-  was collaterally deactivated after the update completes. The plugin
-  being updated is excluded from the restore (its deactivation, if
-  any, is intentional). A notice is shown in the UI when restoration
-  occurs so the admin is aware it happened.
+Fix: collateral plugin deactivation — active plugins snapshotted before each update and restored after.
 
 = 2.0.5 =
-* Security fix: Cross-site AJAX capability bypass on multisite (#1).
-  A new wpmm_ajax_cap_check_with_site() function validates that the
-  requested site_id exists and requires manage_network / super admin
-  when the request targets a different site. Same-site requests keep
-  the existing capability behavior.
-* Security fix: Akismet key verification now switches to the selected
-  site before verifying and saving the key, preventing writes to the
-  wrong site on multisite networks (#7).
-* Security fix: Spam log row actions (delete, clear, blocklist) now
-  pass spam_site_id and perform a validated blog switch before
-  mutating data, preventing cross-site mutations on multisite (#8).
-* Security fix: REST API key is now stored as a wp_hash() digest
-  rather than plaintext. The raw key is shown once after generation
-  and never stored or re-displayed. Existing plaintext keys are
-  migrated to hashed storage automatically on first use (#9).
-* Fix: All-Sites network email is now built and sent before the
-  single-site path, eliminating the stale single-site email that
-  was sent first in network mode (#2).
-* Fix: Dashboard latest-update date now uses MAX(updated_at) for a
-  deterministic aggregate result. Date format string corrected (#6).
-* Fix: Update log page now paginates sessions in SQL (COUNT DISTINCT,
-  then fetch page session IDs, then fetch only those rows), preventing
-  full-table loads on large histories (#10).
-* Fix: Success banner on the Updates page is now hidden unconditionally
-  at the start of renderUpdates() and shown only after a batch with at
-  least one update completes, eliminating the false-success state on a
-  clean page with no available updates (#11).
+Security: cross-site AJAX cap bypass (#1), Akismet site scoping (#7), spam log actions (#8), REST API key hashed (#9).
+Fix: All-Sites network email order (#2), dashboard date (#6), log pagination in SQL (#10), false success banner (#11).
 
 = 2.0.4 =
-* Feature: Email reports now accumulate ALL unsent update sessions.
-  Previously, running plugins in one session and themes in another
-  meant the email only covered the most recent session. A new
-  wpmm_pending_sessions option tracks every session run since the
-  last email was sent. When you click Send Report Email, all pending
-  sessions are merged chronologically into a single report. The
-  pending sessions list is cleared after a successful send, ready
-  for the next maintenance cycle.
-* UI: The Email Reports page now shows how many unsent sessions are
-  pending and the time range they cover. When multiple sessions are
-  pending, a green confirmation note reads "All N sessions will be
-  combined into one email".
+Feature: email reports accumulate all unsent sessions — separate plugin/theme updates combined into one email.
 
 = 2.0.3 =
-* Fix: AIOSEO Pro was incorrectly flagged as "Manual update required"
-  in v2.0.1. The requires_manual flag was being set at scan time based
-  on the package URL being empty in the cached transient — but AIOSEO
-  Pro and similar plugins legitimately have an empty URL in a stale
-  cache and only provide one after a fresh wp_update_plugins() check.
-  The scan now performs a single fresh check when any empty package
-  URLs are detected, then sets requires_manual only for plugins that
-  are still empty after the refresh. Gravity Forms add-ons correctly
-  remain flagged as manual; AIOSEO Pro correctly proceeds through the
-  normal upgrade path.
+Fix: AIOSEO Pro incorrectly flagged as manual update — scan now refreshes before deciding.
 
 = 2.0.2 =
-* Fix: Divi and other premium themes now update correctly. The theme
-  upgrade path now has full parity with the plugin upgrade path: a
-  package URL freshness check with wp_update_themes() refresh when
-  the URL is stale, skin error inspection on null results (correctly
-  reporting copy failures vs generic errors), and an automatic retry
-  with a fresh signed URL when the initial attempt silently fails.
-  Also adds wp_clean_themes_cache() and opcache_reset() before reading
-  the updated version number after a successful theme upgrade.
+Fix: Divi and premium themes now update correctly — freshness check, skin error surfacing, auto-retry.
 
 = 2.0.1 =
-* Fix: Jetpack and other plugins that fail with a filesystem "Could not
-  copy file" error now report the correct error (File Copy Failed) with
-  a clear explanation, rather than the misleading "version unchanged"
-  message. WordPress downloads these plugins successfully but the skin
-  error was not being surfaced — it is now checked before the generic
-  fallback.
-* Fix: Gravity Forms add-ons (and any plugin whose vendor withholds the
-  package URL until a browser-based license check passes) are now shown
-  with a "Manual update required" warning instead of an Update button
-  that would always fail. Their checkboxes are disabled so they cannot
-  be included in batch updates. Users are directed to Dashboard > Updates
-  or the plugin's own settings page.
-* Fix: Plugins with empty package URLs are now flagged as
-  requires_manual in the scan response so the UI can handle them
-  correctly.
+Fix: Jetpack copy error now reported correctly. Gravity Forms add-ons show manual update warning.
 
 = 2.0.0 =
-* Fix: Premium plugins with signed, time-limited package URLs (AIOSEO Pro,
-  WPForms, and similar) now update reliably. When Plugin_Upgrader returns
-  null after a silent download failure, Greenskeeper forces a fresh
-  wp_update_plugins() check to obtain a new signed URL from the vendor's
-  server and retries the upgrade automatically. The retry is bounded to
-  one attempt. Confirmed working with All In One SEO Pro.
-* Fix: Added opcache_reset() and wp_clean_plugins_cache() before reading
-  the updated plugin version to prevent stale opcode cache from reporting
-  the wrong version number after a successful upgrade.
-* Removed diagnostic debug output added in v1.9.9 — root cause confirmed,
-  clean fix implemented.
+Premium plugin updates confirmed working. Auto-retry with fresh signed URL. AIOSEO Pro verified.
 
 = 1.9.9 =
-* Diagnostic build: adds detailed debug output to the failed update
-  message when Plugin_Upgrader returns null, including skin error
-  messages, skin result, and retry outcome. Also adds opcache_reset()
-  and wp_clean_plugins_cache() before reading the new version on a
-  successful upgrade to prevent stale opcode cache from reporting the
-  wrong version. This version is intended for testing only and the
-  debug output will be removed in the next release once the AIOSEO Pro
-  root cause is confirmed.
+Diagnostic build for AIOSEO Pro null result issue.
 
 = 1.9.8 =
-* Fix: All In One SEO Pro (and similar plugins) was reporting "version
-  unchanged" after an update attempt even when no error was returned.
-  Root cause: some premium plugin update servers return HTTP 200 on the
-  initial package URL even when the signed download link behind it has
-  already expired, so the HEAD pre-check passed but the actual download
-  silently failed, causing Plugin_Upgrader to return null. Fix: when
-  the upgrader returns null and the version has not advanced, Greenskeeper
-  now forces a fresh wp_update_plugins() check to obtain a new signed URL
-  from the vendor's server, then retries the upgrade once automatically.
-  The retry is bounded to one attempt to prevent loops.
+Fix: AIOSEO Pro reporting "version unchanged" — auto-retry with fresh signed URL.
 
 = 1.9.7 =
-* Critical fix (improved): Premium plugin updates now work correctly
-  rather than aborting. v1.9.6 prevented deactivation by aborting updates
-  when the package URL was stale, but this meant premium plugins still
-  could not be updated. v1.9.7 implements the correct strategy: when a
-  package URL is stale (returns HTTP 4xx or network error), Greenskeeper
-  now forces a fresh wp_update_plugins() check to obtain a new signed URL
-  from the plugin vendor's update server — exactly what WordPress core does
-  before its own upgrade process. The upgrade then proceeds with the fresh
-  URL. This allows Gravity Forms, ACF, Sucuri, Divi, and other licensed
-  plugins to update normally through Greenskeeper without requiring manual
-  updates or risking deactivation.
+Premium plugin updates: forces fresh wp_update_plugins() when package URL is stale.
 
 = 1.9.6 =
-* Critical fix: Premium plugins (Gravity Forms, ACF, Divi, Sucuri, etc.)
-  were being deactivated after a failed update attempt. Root cause: when
-  WordPress's Plugin_Upgrader fails to download a package (e.g. because
-  a licensed plugin's package URL requires authentication that is not
-  available in the AJAX context), WordPress core calls deactivate_plugins()
-  as part of its own error recovery / rollback. Greenskeeper was triggering
-  this by attempting the upgrade before verifying the package was accessible.
-  Fix: a wp_remote_head() check is now performed against the package URL
-  before any upgrade is attempted. If the URL returns HTTP 4xx or 5xx,
-  the update is aborted with a clear error message and the plugin is left
-  untouched. This applies to both the transient-injection path and the
-  normal upgrade path.
+Critical fix: prevent premium plugin deactivation on failed updates.
 
 = 1.9.5 =
-* Feature: Sent Email History now updates instantly via AJAX after a
-  successful send — no page refresh required. The new row is prepended
-  to the top of the history table and briefly highlighted green so it
-  is immediately visible. If no emails have been sent yet (empty state),
-  the table is built dynamically on first send.
+Feature: Sent Email History updates instantly via AJAX after send.
 
 = 1.9.4 =
-* Fix: Batch updates on shared hosting environments were failing after the
-  first item with "Request failed. Please try again." The AJAX update call
-  has been switched from $.post() (no timeout control) to $.ajax() with an
-  explicit 120-second timeout per update. Error messages now distinguish
-  between a timeout and a hard HTTP failure.
-* Fix: Added an 800ms delay between sequential updates in a batch run to
-  prevent rapid-fire requests from being throttled or rejected by the server.
-* Fix: Added set_time_limit(300) to the PHP update AJAX handler so long-
-  running plugin updates on slow hosts complete before PHP's execution limit
-  cuts the request off.
-* Note: The "Request failed" errors seen were not caused by PHP errors in
-  the plugin — they were network-level AJAX timeouts. The aioseo-redirects
-  warnings visible in server logs are pre-existing PHP notices from that
-  plugin and are unrelated to Greenskeeper.
+Fix: batch update timeouts on shared hosting.
 
 = 1.9.3 =
-* Fix: Replaced date() with gmdate() in external update session ID generation
-  to avoid timezone-affected output (WordPress coding standards requirement).
-* Fix: Applied esc_sql() to all table name variables ($spam_table, $log_table,
-  $email_table) across admin.php, email.php, rest-api.php, spam-filter.php,
-  and db.php to satisfy Plugin Check's UnescapedDBParameter requirement.
-* Fix: Restructured ternary database query in ajax.php that was incorrectly
-  triggering NotPrepared warnings due to static analysis limitations.
-* Fix: Wrapped remaining unprepared queries in $wpdb->prepare() in rest-api.php
-  (status endpoint, log endpoint COUNT, send-report fallback).
-* Fix: Added missing phpcs:ignore annotation for the dynamic IN() clause in
-  bulk spam log delete — a known false positive for array_fill() placeholders.
-* Fix: TRUNCATE TABLE query now uses esc_sql() on the table name.
-* Fix: Short description in readme.txt trimmed to meet the 150-character limit.
-* Code: Added explanatory comment for load_plugin_textdomain() clarifying it
-  was added at WordPress.org reviewer request and is a no-op once hosted.
+Plugin Check compliance: gmdate(), esc_sql(), prepared queries, short description length.
 
 = 1.9.2 =
-* Security: Sanitized all $_SERVER variables (HTTP_USER_AGENT, HTTP_REFERER,
-  REMOTE_ADDR) with sanitize_text_field() + wp_unslash() before use.
-* Security: Wrapped remaining unprepared database queries in $wpdb->prepare().
-* Security: Converted INFORMATION_SCHEMA index check query to use
-  $wpdb->prepare() with parameterised values.
-* Documentation: Added == External Services == section to readme.txt
-  documenting the optional Akismet API integration — what data is sent,
-  when, and links to Akismet's terms of service and privacy policy.
-* Code: Added authoritative inline comments to updates.php explaining why
-  require_once of WP core admin files is legitimate, why set_site_transient()
-  is not a phone-home update checker (it is local WordPress cache), and why
-  Plugin_Upgrader::upgrade() and Theme_Upgrader::upgrade() do not change
-  plugin or theme activation status.
-* Code: Improved docblock on wpmm_get_scoped_site_id() explaining the
-  deliberate nonce exception for the read-only display-scope GET parameter.
+WordPress.org compliance: sanitize $_SERVER variables, External Services disclosure, inline comments.
 
-= 1.9.1.3 =
-* Fix: Email preview modal was cutting off body content at the footer.
-  The modal body now scrolls the full email. Root causes were overflow:hidden
-  on the modal body container, and the iframe having no mechanism to expand
-  to its content height. The modal body is now overflow-y:auto and the iframe
-  auto-resizes to its full content height after load via a JS onload handler.
-* Feature: Greenskeeper version number now displayed below the logo in the
-  admin header on every plugin page, making it easy to confirm which version
-  is installed without visiting the Plugins screen.
-
-= 1.9.1.2 =
-* Fix: Email report footer was overlapping and cutting off body content
-  (update tables, external updates, spam activity, and administrator notes)
-  when the report contained more than a few entries. The body div now uses
-  a generous padding-bottom and all content sections render fully above the
-  footer regardless of report length.
-* Fix: Administrator Update Notes block was assembled outside the body div,
-  causing it to float between the body and footer in some email clients. The
-  note block is now correctly positioned inside the body div above the footer.
-
-= 1.9.1 =
-* Fix: Theme updates were not appearing in email reports. The item_type
-  bucketing in wpmm_build_email_body() now accepts both 'theme' and
-  'themes' for full backward compatibility.
-* Fix: Update Notes and Additional Manual Updates were in separate cards
-  below the Send button, making it unclear they would be included in
-  the email. Both sections have been merged into the Send Maintenance
-  Report card above the Send button.
-* Feature: Spam activity since the last sent report is now included as
-  a section in every maintenance email. The Spam Activity section shows
-  each blocked comment attempt (when, rule, IP, content preview) that
-  occurred between the last sent report and the current send.
-* Feature: Administrator full name (First Name + Last Name from WordPress
-  user profile) now shown in email reports and the From: preview on the
-  Email Reports page. Falls back to display_name if no first/last name
-  is saved in the user profile.
-* Feature: External update detection via the upgrader_process_complete
-  hook. Updates made through the WordPress Updates screen, the Avada
-  plugins dashboard (Avada Core, Avada Builder), or any standard WordPress
-  update mechanism are now automatically logged with a session labelled
-  External. These appear in the Update Log with an External badge and are
-  included as a separate section in the next maintenance report email.
-* Note: Avada Patches applied via Avada's Maintenance → Plugins & Add-Ons
-  dashboard use a proprietary mechanism that does not fire WordPress update
-  hooks and cannot be auto-detected. Document these using Additional Manual
-  Updates.
-* Documentation: Tested up to WordPress 6.9. Changelog and FAQs updated.
-
-= 1.9.0 =
-* Rename: plugin renamed from Greenskeeper to Greenskeeper.
-  All display names, slug, and text domain updated. Internal wpmm_ prefixes
-  and database table names unchanged for full backward compatibility.
-* Feature: Multisite Site Scope Selector on Updates, Spam Log, and Settings pages.
-  A scope bar appears in Network Admin with a dropdown populated by get_sites().
-  Selecting a site filters the page to that site's context; "All Sites" shows
-  the full network view.
-* Feature: Updates page — single-site scope filters plugin and theme lists to
-  only items activated on the selected site (site-level and network-activated).
-  Updates run in that site's blog context and log to its own wpmm_update_log.
-* Feature: Updates page — All Sites mode shows all network-wide available updates.
-  Email report in All Sites mode is a consolidated network report with one
-  section per site, each with its own Core/Plugins/Themes tables.
-* Feature: Spam Filter settings are per-site in Multisite. Network Admin shows
-  a summary overview table (spam on/off, Akismet status, comments status per
-  site) when All Sites is selected, and the full settings form when a specific
-  site is selected.
-* Feature: Network email report — new wpmm_build_network_email_body() function
-  builds a consolidated HTML email listing every site updated in a network run
-  with its own update table sections and a site header for each.
-
-= 1.8.0 =
-* Feature: Manage Plugin Access card in Settings.
-* A new wpmm_access custom WordPress capability controls who can see and
-  use the plugin. Only administrators explicitly granted this capability
-  will see the Site Maintenance menu — it is completely invisible to all
-  other users including client administrators.
-* Manage Plugin Access card in Settings lists every site administrator
-  with a checkbox. The current user is always locked in to prevent
-  accidental self-lockout.
-* Access settings are synced to WordPress user capabilities immediately
-  on save via wpmm_grant_access_to_admins().
-* On fresh activation or if no users have been explicitly granted access,
-  the plugin falls back to manage_options so existing installs are not
-  accidentally locked.
-* Two-factor authentication notice: a dismissible admin notice on all
-  plugin pages recommends installing WP 2FA or Two Factor if no 2FA
-  plugin is detected on the site.
-
-= 1.7.0 =
-* Feature: Spam Log page — sixth page under the Site Maintenance menu.
-* All locally-blocked comment attempts are now logged to a new
-  wpmm_spam_log database table (blocked_at, rule, IP, author name,
-  author email, author URL, content, post ID).
-* Akismet-caught spam is also logged to the same table for unified
-  visibility alongside WordPress's native Comments → Spam queue.
-* Spam Log page shows a stats summary (blocked count per rule), a
-  paginated and filterable table of all blocked attempts, and per-row
-  actions: Block IP (adds to Settings blocklist) and Delete.
-* Bulk delete selected rows and Clear All button.
-* Filter by rule type or IP address.
-* Dashboard quick-nav tile for Spam Log shown when spam filtering is
-  enabled.
-* All-time blocked counts per rule shown on the Spam Log stats card.
-
-= 1.6.0 =
-* Feature: Spam Filter & Comments card in Settings.
-* Layer 1 — Local filtering (always active when spam filter is on): honeypot
-  hidden field, minimum submission time check, maximum links per comment,
-  configurable keyword blocklist, configurable IP blocklist, duplicate comment
-  detection within a rolling 1-hour window.
-* Layer 2 — Akismet cloud filtering: optional, activated by entering an API key.
-  Skipped automatically when the standalone Akismet plugin is already active.
-  Failed Akismet requests fail open (comment allowed) rather than blocking
-  legitimate comments if the API is unreachable.
-* Disable Comments: toggle to remove comment support from all post types,
-  close all existing comments, hide the Comments admin menu, and remove
-  discussion meta boxes from the post editor.
-* Akismet key verification: Verify & Save button confirms the key is valid
-  against the Akismet API before storing it. Revoke button removes the key.
-* Toggle switches for all boolean settings with live label updates.
-
-= 1.5.9.1 =
-* Changelog updated to include all versions from 1.5.1 through 1.5.9 which
-  were missing from previous releases. No functional code changes.
-
-= 1.5.9 =
-* Feature: REST API spoke endpoints (smm/v1 namespace) enabling a remote hub
-  site to manage updates, fetch logs, and send reports without a WordPress login.
-* Six endpoints: GET /status, GET /updates, POST /update, GET /log,
-  POST /send-report, POST /rotate-key.
-* Authentication via X-SMM-API-Key header with hash_equals() comparison.
-* New Remote API Access card in Settings for generating, copying, rotating,
-  and revoking the API key, with a full endpoint reference table shown inline.
-
-= 1.5.8 =
-* Plugin Check compliance (third round) — all remaining warnings resolved.
-* includes/ajax.php: DirectQuery and NoCaching phpcs:ignore annotations moved
-  inline onto the get_results() call lines (were on preceding comment lines).
-* includes/ajax.php: manual_entries JSON input now passes through
-  sanitize_text_field(wp_unslash()) before json_decode() to satisfy
-  InputNotSanitized check.
-* admin/admin.php: DirectQuery and NoCaching ignores moved inline onto both
-  branches of the get_results() ternary in wpmm_render_log().
-
-= 1.5.7 =
-* Feature: Update Notes card on the Email Reports page.
-* Administrators can append a plain-text note to any outgoing maintenance report.
-* The note appears in the email body between the update tables and the footer,
-  inside a styled amber callout box titled "Note from your administrator".
-* Line breaks are preserved. The field is optional — leaving it blank adds
-  nothing to the email.
-
-= 1.5.6 =
-* Feature: Additional Manual Updates repeater on the Email Reports page.
-* Administrators can document plugins or themes updated manually outside the
-  plugin's automated process (e.g. Avada, ACF Pro, Gravity Forms).
-* Each repeater row has a plugin/theme dropdown (auto-fills current version),
-  a Previous Version field, and an Updated To field.
-* Manual entries are included as a fourth section in the email body titled
-  "Additional Manual Updates" with a styled table matching Core/Plugins/Themes.
-* Manual entries are composed fresh on each send and not stored in the database.
-
-= 1.5.5 =
-* Critical fix: plugins like Advanced Custom Fields PRO and Gravity Forms were
-  being deactivated after a successful update.
-* Root cause: when a premium plugin's update transient entry was missing,
-  the code called Plugin_Upgrader::install() which internally calls
-  deactivate_plugins() as part of a fresh-install flow.
-* Fix: replaced install() with a transient-injection approach — a synthetic
-  entry containing the package URL is inserted, upgrade() is called instead,
-  and the entry is cleaned up after. upgrade() preserves plugin active state.
-* Same fix applied to the equivalent fallback branch in the theme update path.
-
-= 1.5.4 =
-* Plugin Check compliance (second round) — all remaining warnings resolved.
-* includes/db.php: phpcs:ignore added inline on the ALTER TABLE query() call
-  for NotPrepared, DirectQuery, NoCaching, and UnescapedDBParameter.
-* includes/ajax.php: phpcs:ignore comments moved to inline on every individual
-  $_POST read line; DirectQuery/NoCaching ignores added to all get_row(),
-  get_results(), and get_col() calls.
-* includes/ajax.php: DirectQuery ignore added to wpdb->insert() in email log.
-* admin/admin.php: UnescapedDBParameter added to Dashboard get_row() ignore;
-  NonceVerification.Recommended ignores moved to per-line inline comments;
-  UnescapedDBParameter added to Update Log get_results() both branches;
-  Email Reports get_results() ignore restructured to target exact lines.
-
-= 1.5.3 =
-* Fix: jQuery UI datepicker calendar on the Email Reports page was rendering
-  transparent (no background, no borders, no text colour).
-* Root cause: a previous Plugin Check fix replaced the external jQuery UI CDN
-  stylesheet with wp-jquery-ui-dialog, which only loads dialog styles, not
-  datepicker styles.
-* Fix: full datepicker styles are now written directly into admin.css. No
-  external CDN and no dependency on WordPress bundled handles that may only
-  include a subset of jQuery UI components.
-
-= 1.5.2 =
-* Fix: duplicate tip card on the Update Log page removed. Each of the five
-  plugin pages now has exactly one tip card call.
-* Fix: tip card missing from Email Reports page restored.
-* Fix: margin above the tip card was not rendering at the updated value because
-  browsers were serving a cached stylesheet. Version bump to 1.5.2 forces the
-  browser to download the updated admin.css (via ?ver= query string change).
-
-= 1.5.1 =
-* Feature: Report Week-Ending Date picker moved from Dashboard to Email Reports
-  page. Selecting a date appends "for week of: [date]" to the subject line.
-  A Clear Date link removes it. The subject field remains fully editable.
-* Feature: Progress bar replaces the spinning arrow on the Updates page.
-  The bar fills from 0% to 100% as each item completes, with a live text line
-  showing each item name as it finishes. Holds at 100% for 600ms before the
-  success banner appears.
-* Fix: success banner no longer persists when returning to the Updates page
-  after a completed session. When a new scan finds available updates, the
-  banner from the previous session is automatically cleared.
-* Feature: Tip card added to all five plugin pages (Dashboard, Updates, Update
-  Log, Email Reports, Settings). Amber-styled card with PayPal and Venmo links.
-
-= 1.5.0 =
-**WordPress.org Plugin Check compliance pass**
-
-All errors and warnings reported by the Plugin Check plugin have been resolved:
-
-* admin/admin.php: Replaced external jQuery UI CSS (code.jquery.com) with the
-  bundled WordPress version (wp-jquery-ui-dialog) to comply with the no external
-  resource offloading rule.
-* admin/admin.php: Wrapped echo __() in esc_html__() per output escaping rules.
-* admin/admin.php: Added wp_unslash() to all $_GET input reads (log_search,
-  log_from, log_to, per_page, sess_page).
-* admin/admin.php: Replaced all bare echo $integer with echo absint($integer)
-  (sess_total, lim, per_page, success_count, fail_count, diag counts).
-* admin/admin.php: Wrapped echo $make_pagination() in wp_kses_post().
-* admin/admin.php: Wrapped echo $from_label in esc_html() after building the
-  value as a plain string rather than a pre-escaped string.
-* admin/admin.php: Added phpcs:ignore with explanatory comments on direct DB
-  queries that use safe table names (prefix + fixed string, no user input).
-* admin/settings.php: Wrapped echo $m['sub'] in wp_kses_post() — the sub-labels
-  contain HTML entities and are hardcoded, not user input.
-* includes/ajax.php: Added wp_unslash() to all $_POST reads. Added
-  phpcs:ignore WordPress.Security.NonceVerification.Missing with explanatory
-  comments — nonce IS verified via wpmm_ajax_cap_check() → check_ajax_referer(),
-  but the static analyser cannot trace into called functions.
-* includes/smtp.php: Added wp_unslash() to all $_POST reads. smtp_enc is now
-  sanitized through a $raw_enc variable before the in_array() check.
-  smtp_password is now sanitized with sanitize_text_field() before use.
-* includes/email.php: Replaced unconditional error_log() with a WP_DEBUG-gated
-  trigger_error() call, acceptable to WordPress.org reviewers.
-* includes/db.php: Added file-level phpcs:disable block for the five DB-related
-  rules that cannot apply to schema management (CREATE TABLE, ALTER TABLE,
-  SHOW COLUMNS, INFORMATION_SCHEMA). All table names are $wpdb->prefix + fixed
-  strings — no user input is ever interpolated.
-* includes/updates.php: Added phpcs:ignore on the direct wpdb->insert() call.
-* readme.txt: Tags reduced from 8 to 5 (WordPress.org maximum).
-* readme.txt: Short description trimmed to 124 characters (maximum 150).
-* readme.txt: Description section trimmed from 7,102 to 1,304 characters
-  (maximum 2,500).
-
-
-= 1.4.9 =
-* Renamed plugin from "WP Maintenance Manager" to "Greenskeeper"
-  to comply with WordPress.org plugin repository naming rules, which prohibit
-  plugin display names beginning with "WP". All display names, text domain,
-  plugin slug, folder name, and main PHP filename updated accordingly.
-  Internal function and database prefixes (wpmm_) are unchanged to preserve
-  compatibility with existing installations.
-
-
-= 1.4.8 =
-* Feature: Avada theme detection. When the Avada theme is installed, the Updates
-  page shows a contextual notice explaining the required update order: Avada theme
-  first, then Avada Core, then Avada Builder. When Avada Core or Avada Builder
-  have available updates in the WordPress update transient, the notice lists them
-  by name so they are easy to find in the Plugins section below.
-* Feature: When Avada theme is selected for update and Update Selected is clicked,
-  a confirmation dialog reminds the administrator to update Avada Core and Avada
-  Builder afterward, in that order.
-* Feature: A direct link to the Avada Maintenance / Plugins & Add-Ons dashboard
-  is shown so the administrator can check for Avada Patches, which are managed
-  entirely within Avada's own dashboard and do not appear in the standard
-  WordPress update API.
-* Fix: SMTP From Name now correctly uses the value saved in Settings. Previously,
-  an empty string saved in smtp_from_name was used as-is via PHP's ?? operator,
-  causing PHPMailer to fall back to the site name. Fixed by using !empty() checks
-  so an empty string falls through to company_name then the site name.
-* Fix: "All selected items updated successfully" banner now clears at the start
-  of each new batch and is replaced by an in-progress indicator showing how many
-  items are being updated. The banner reappears only when the new batch completes.
-
-
-= 1.4.5 =
-* Added Gmail / Google Workspace SMTP support (smtp.gmail.com:587, requires App Password).
-* Added Microsoft / Outlook / Office 365 SMTP support (smtp.office365.com:587).
-* Comprehensive step-by-step setup instructions for both providers in the Settings help panel.
-* Username hints update contextually when each provider tile is selected.
-
-= 1.4.4 =
-* New feature: SMTP & Email Delivery card in Settings.
-* Nine mailer options: WordPress Default, Manual SMTP, SendGrid, Mailgun, Brevo, SendLayer, SMTP.com, Gmail, Microsoft.
-* Visual provider tile selector with context-sensitive help text and step-by-step instructions.
-* AES-256-CBC encryption for stored passwords and API keys.
-* Send Test Email button with real-time success/failure feedback.
-* Hooks into phpmailer_init — no separate SMTP plugin required.
-
-= 1.4.3 =
-* Email header redesigned: Site Name/URL at top, then logo + company name inline, then "WordPress website updates administered by [Admin Name]".
-* Update Log: per-page limit selector (20 / 50 / 100 sessions).
-* Update Log: Previous / Next pagination bars at top and bottom of session list.
-
-= 1.4.2 =
-* Fix: Emails showing "No update entries found for this session." Session ID resolution now uses a dedicated flag (updatesRanThisLoad) set only when updates are actually run, preventing the cross-page session mismatch.
-* Fix: Sent Email History previews now show full plugin/theme lists. Preview modal rebuilds body from original log entries rather than returning stale stored HTML.
-* Email header logo reduced to 50% size.
-
-= 1.4.1 =
-* Fix: Plugins and themes missing from email body. Template assembly rewritten using explicit string concatenation instead of double-quoted string interpolation.
-* Added isset() guards on all entry property accesses.
-* Email header: Site Name and URL moved to the top; agency branding below.
-
-= 1.4.0 =
-* Critical fix: Update Log and Email History not recording new entries on existing installs. Root cause was DB schema never upgraded after file-upload updates. admin_init hook now runs wpmm_create_tables() once per version bump with delete_option() before and update_option() only on success.
-* Column checks now use INFORMATION_SCHEMA.COLUMNS for reliability across all MySQL/MariaDB versions.
-* Database Diagnostic panel added to Update Log page: shows both tables, columns (green/red), row counts, most recent rows, and Force DB Upgrade Now button.
-
-= 1.3.9 =
-* Critical fix: Update Log showing only one old session. SQL_NO_CACHE removed — it was causing a fatal syntax error on MySQL 8.0+.
-* Feature: Live autocomplete search on the Update Log page.
-
-= 1.3.8 =
-* Fix: Resent emails now use the current template. session_id stored in wpmm_email_log; resend rebuilds body from original log entries.
-* Fix: Session items sorted ascending so session start time is shown correctly.
-* Added Refresh button to Update Log card header.
-
-= 1.3.7 =
-* Email template header redesigned per spec: company logo and name side-by-side, completed-by statement, site block with external-link icon on URL.
-
-= 1.3.6 =
-* Fix: Company name and client email saved values now display correctly after saving. show()/hide() replaced with CSS class toggling to preserve display:flex on the saved-field-display element.
-
-= 1.3.5 =
-* Fix: All Settings page save buttons now work. Four bugs resolved: duplicate HTML IDs, missing type="button" attributes, wp.media not loaded before script, and stale element ID mapping in JS.
-
-= 1.3.4 =
-* Fix: Settings page now loads with full plugin styling. Asset enqueue now uses slug-suffix matching instead of a stored option that could be stale.
-
-= 1.3.3 =
-* Fix: Settings page showing generic WordPress styling. wpmm_page_hooks option could be stale; enqueue now checks hook string directly.
-
-= 1.3.2 =
-* Fix: Logo upload working. wp_enqueue_media() moved to admin_enqueue_scripts hook. media-editor added as script dependency on Settings page.
-* Settings page design overhauled to match all other plugin pages.
-
-= 1.3.1 =
-* Fix: Email reports containing no content (cross-page session loss). Session ID now persisted in wpmm_last_session option; Email Reports page reads it as a server-side hidden field.
-* Fix: Multisite email reports now query the correct sub-site's log table via switch_to_blog().
-
-= 1.3.0 =
-* New: Settings page with Company & Branding (logo, company name), Client Contact (email), and Site Administrators (default admin selection).
-* Client email moved from Dashboard to Settings.
-* Dashboard redesigned with status summary cards and Settings quick-nav tile.
-* Updates page: Performing Administrator dropdown per session.
-* Email template: agency logo, company name, administrator name in header; sectioned Core/Plugins/Themes tables.
-
-= 1.2.3 =
-* Fix: Update Log showing no entries. Subquery SQL approach removed; grouping now done in PHP.
-* Fix: Email preview modal spinner not stopping. show()/hide() replaced with CSS class toggling.
-
-= 1.2.2 =
-* Initial public release with Dashboard, Updates, Update Log, and Email Reports pages.
-* WordPress Core, Plugin, and Theme update support.
-* Multisite/Network support.
-* 24-entry error code dictionary with plain-English explanations.
 
 == Upgrade Notice ==
 

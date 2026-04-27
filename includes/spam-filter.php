@@ -481,9 +481,12 @@ function wpmm_ajax_delete_spam_entries() {
     }
 
     $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+    // Dynamic IN() clause — $placeholders is '%d,%d,...' built via array_fill(),
+    // one placeholder per ID. This is the standard WP pattern for IN() clauses
+    // and is safe despite the checker's NotPrepared and UnfinishedPrepare flags.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
     $deleted = $wpdb->query(
-        $wpdb->prepare( 'DELETE FROM ' . esc_sql( $wpdb->prefix . 'wpmm_spam_log' ) . ' WHERE id IN (' . $placeholders . ')', $ids ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $wpdb->prepare( 'DELETE FROM ' . esc_sql( $wpdb->prefix . 'wpmm_spam_log' ) . ' WHERE id IN (' . $placeholders . ')', $ids ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
     );
 
     if ( $switched ) { restore_current_blog(); }

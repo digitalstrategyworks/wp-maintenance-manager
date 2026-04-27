@@ -58,15 +58,19 @@ function wpmm_ajax_run_update() {
     // targets a different blog. Returns the validated site_id.
     $site_id = wpmm_ajax_cap_check_with_site();
 
+    // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- set_time_limit is required for long-running plugin updates on shared hosting.
     if ( function_exists( 'set_time_limit' ) ) {
-        set_time_limit( 300 );
+        set_time_limit( 300 ); // 5 minutes per individual update.
     }
 
-    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified above.
+    // Nonce verified by wpmm_ajax_cap_check_with_site() above — phpcs cannot
+    // trace through the function call so suppression is required here.
+    // phpcs:disable WordPress.Security.NonceVerification.Missing
     $type       = sanitize_text_field( wp_unslash( $_POST['item_type']  ?? '' ) );
     $slug       = sanitize_text_field( wp_unslash( $_POST['item_slug']  ?? '' ) );
     $session_id = sanitize_text_field( wp_unslash( $_POST['session_id'] ?? '' ) );
     $package    = esc_url_raw( wp_unslash( $_POST['package']    ?? '' ) );
+    // phpcs:enable WordPress.Security.NonceVerification.Missing
 
     if ( ! $type || ! $slug ) {
         wp_send_json_error( 'Missing parameters.' );
@@ -79,20 +83,34 @@ function wpmm_ajax_run_update() {
     }
 
     // ── Active plugin snapshot ────────────────────────────────────────────────
-    // WordPress's upgrader calls deactivate_plugins() as part of its error
-    // recovery when an update fails mid-extraction. This can deactivate plugins
-    // that were never part of the failing update (collateral deactivation).
+    // WordPress's upgrader can call deactivate_plugins() as part of error
+    // recovery, deactivating plugins that were never part of the failing update.
     //
-    // We persist the pre-batch snapshot as a transient keyed to the session ID
-    // so that retries also restore from the original pre-batch state — not from
-    // a post-deactivation state that's missing the collateral victims.
-    $snapshot_key  = 'wpmm_active_snapshot_' . md5( $session_id ?: 'default' );
-    $active_before = get_transient( $snapshot_key );
-    if ( false === $active_before ) {
-        // First request in this batch — take the snapshot now and persist it.
-        $active_before = (array) get_option( 'active_plugins', [] );
-        set_transient( $snapshot_key, $active_before, 30 * MINUTE_IN_SECONDS );
+    // On multisite, plugins can be active in two places:
+    //   active_plugins          — per-site option (site-level activation)
+    //   active_sitewide_plugins — network option (network/sitewide activation)
+    //
+    // Google Site Kit, Sucuri, Microsoft Clarity and similar are typically
+    // network-activated — stored in active_sitewide_plugins, NOT active_plugins.
+    // Previous versions of this fix only restored active_plugins and therefore
+    // missed network-activated plugins entirely.
+    //
+    // We snapshot BOTH options and restore BOTH if deactivation is detected.
+    // The snapshot is persisted as a transient keyed to the session ID so
+    // retries restore from the original pre-batch state.
+    $snapshot_key = 'wpmm_active_snapshot_' . md5( $session_id ?: 'default' );
+    $snapshot     = get_transient( $snapshot_key );
+    if ( false === $snapshot ) {
+        $snapshot = [
+            'active_plugins'          => (array) get_option( 'active_plugins', [] ),
+            'active_sitewide_plugins' => is_multisite()
+                ? (array) get_site_option( 'active_sitewide_plugins', [] )
+                : [],
+        ];
+        set_transient( $snapshot_key, $snapshot, 30 * MINUTE_IN_SECONDS );
     }
+    $active_before          = $snapshot['active_plugins'];
+    $sitewide_before        = $snapshot['active_sitewide_plugins'];
     // ─────────────────────────────────────────────────────────────────────────
 
     $GLOBALS['wpmm_session_id'] = $session_id;
@@ -101,26 +119,52 @@ function wpmm_ajax_run_update() {
 
     // ── Restore collaterally deactivated plugins ──────────────────────────────
     if ( $type === 'plugin' ) {
-        $active_after = (array) get_option( 'active_plugins', [] );
-        $deactivated  = array_diff( $active_before, $active_after );
-        $to_restore   = array_values( array_filter(
-            $deactivated,
-            function( $p ) use ( $slug ) {
-                return $p !== $slug; // Never restore the plugin we just updated.
-            }
-        ) );
+        $active_after   = (array) get_option( 'active_plugins', [] );
+        $sitewide_after = is_multisite()
+            ? (array) get_site_option( 'active_sitewide_plugins', [] )
+            : [];
 
+        $restored    = [];
+
+        // Restore site-level plugins.
+        $deactivated = array_diff( $active_before, $active_after );
+        $to_restore  = array_values( array_filter( $deactivated, function( $p ) use ( $slug ) {
+            return $p !== $slug;
+        } ) );
         if ( ! empty( $to_restore ) ) {
-            // Write directly to active_plugins — bypass activate_plugins() which
-            // runs dependency checks that can fail mid-batch when Divi or another
-            // dependency is in a mid-update state, causing silent restore failure.
-            $restored_list = array_unique( array_merge( $active_after, $to_restore ) );
-            sort( $restored_list );
-            update_option( 'active_plugins', $restored_list );
-            // Update the snapshot so subsequent restores in this batch reflect
+            $new_active = array_unique( array_merge( $active_after, $to_restore ) );
+            sort( $new_active );
+            update_option( 'active_plugins', $new_active );
+            $restored = array_merge( $restored, $to_restore );
+        } else {
+            $new_active = $active_after;
+        }
+
+        // Restore network-activated plugins (multisite only).
+        if ( is_multisite() && ! empty( $sitewide_before ) ) {
+            // active_sitewide_plugins is keyed by plugin file path with timestamp values.
+            $deactivated_keys = array_diff_key( $sitewide_before, $sitewide_after );
+            // Remove the slug we just updated from restore candidates.
+            unset( $deactivated_keys[ $slug ] );
+            if ( ! empty( $deactivated_keys ) ) {
+                $new_sitewide = array_merge( $sitewide_after, $deactivated_keys );
+                update_site_option( 'active_sitewide_plugins', $new_sitewide );
+                $restored = array_merge( $restored, array_keys( $deactivated_keys ) );
+            } else {
+                $new_sitewide = $sitewide_after;
+            }
+        } else {
+            $new_sitewide = $sitewide_after;
+        }
+
+        if ( ! empty( $restored ) ) {
+            // Update the transient so subsequent requests in this batch see
             // the corrected state rather than re-restoring already-active plugins.
-            set_transient( $snapshot_key, $restored_list, 30 * MINUTE_IN_SECONDS );
-            $result['collateral_restored'] = $to_restore;
+            set_transient( $snapshot_key, [
+                'active_plugins'          => $new_active,
+                'active_sitewide_plugins' => $new_sitewide,
+            ], 30 * MINUTE_IN_SECONDS );
+            $result['collateral_restored'] = $restored;
         }
     }
     // ─────────────────────────────────────────────────────────────────────────

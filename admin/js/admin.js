@@ -608,94 +608,103 @@ jQuery(function ($) {
 
         var updateNote = $('#wpmm-update-notes').val() || '';
 
-        $.post(wpmm.ajax_url, {
-            action:          'wpmm_send_email',
-            nonce:           wpmm.nonce,
-            to_email:        toEmail,
-            subject:         subject,
-            session_id:      resolvedSession,
-            admin_id:        performingAdminId,
-            manual_entries:  manualEntries,
-            update_note:     updateNote,
-            site_id:         $('#wpmm-email-scope-site-id').val() || 0,
-            network_all:     ($('#wpmm-email-scope-site-id').length && $('#wpmm-email-scope-site-id').val() == '0') ? 1 : 0
-        }).then(function (res) {
-            $btn.prop('disabled', false)
-                .html('<span class="dashicons dashicons-email"></span> Send Report Email');
-            if (res.success) {
-                $result.html(
-                    '<div class="wpmm-notice wpmm-notice-success">' +
-                    '<span class="dashicons dashicons-yes-alt"></span> ' +
-                    escHtml(res.data.message) +
-                    ' <a href="' + (wpmm.url_log || '#') + '">View log &rarr;</a></div>'
-                );
+        $.ajax({
+            url:     wpmm.ajax_url,
+            method:  'POST',
+            timeout: 60000,
+            data: {
+                action:          'wpmm_send_email',
+                nonce:           wpmm.nonce,
+                to_email:        toEmail,
+                subject:         subject,
+                session_id:      resolvedSession,
+                admin_id:        performingAdminId,
+                manual_entries:  manualEntries,
+                update_note:     updateNote,
+                site_id:         $('#wpmm-email-scope-site-id').val() || 0,
+                network_all:     ($('#wpmm-email-scope-site-id').length && $('#wpmm-email-scope-site-id').val() == '0') ? 1 : 0
+            },
+            success: function (res) {
+                $btn.prop('disabled', false)
+                    .html('<span class="dashicons dashicons-email"></span> Send Report Email');
+                if (res.success) {
+                    $result.html(
+                        '<div class="wpmm-notice wpmm-notice-success">' +
+                        '<span class="dashicons dashicons-yes-alt"></span> ' +
+                        escHtml(res.data.message) +
+                        ' <a href="' + (wpmm.url_log || '#') + '">View log &rarr;</a></div>'
+                    );
 
-                // ── Prepend new row to the Sent Email History table ───────────
-                var row = res.data.row;
-                if (row) {
-                    var subj    = row.subject.length > 65 ? row.subject.substring(0, 65) + '\u2026' : row.subject;
-                    var newRow  =
-                        '<tr id="wpmm-email-row-' + row.id + '" class="wpmm-history-new">' +
-                        '<td>' + escHtml(row.sent_at) + '</td>' +
-                        '<td>' + escHtml(row.to) + '</td>' +
-                        '<td>' + escHtml(subj) + '</td>' +
-                        '<td><span class="wpmm-badge wpmm-badge-success">Sent</span></td>' +
-                        '<td style="text-align:center;">' +
-                            '<button class="wpmm-preview-btn" type="button" title="Preview email"' +
-                            ' data-id="' + row.id + '"' +
-                            ' data-subject="' + escHtml(row.subject) + '"' +
-                            ' data-to="' + escHtml(row.to) + '"' +
-                            ' data-sent="' + escHtml(row.sent_at) + '">' +
-                            '<span class="dashicons dashicons-visibility"></span>' +
-                            '</button>' +
-                        '</td>' +
-                        '<td>' +
-                            '<button class="wpmm-btn wpmm-btn-sm wpmm-resend-btn" data-id="' + row.id + '">' +
-                            '<span class="dashicons dashicons-controls-repeat"></span> Resend' +
-                            '</button>' +
-                        '</td>' +
-                        '</tr>';
+                    // ── Prepend new row to the Sent Email History table ───────
+                    var row = res.data.row;
+                    if (row) {
+                        var subj   = row.subject.length > 65
+                            ? row.subject.substring(0, 65) + '\u2026'
+                            : row.subject;
+                        var newRow =
+                            '<tr id="wpmm-email-row-' + row.id + '" class="wpmm-history-new">' +
+                            '<td>' + escHtml(row.sent_at) + '</td>' +
+                            '<td>' + escHtml(row.to) + '</td>' +
+                            '<td>' + escHtml(subj) + '</td>' +
+                            '<td><span class="wpmm-badge wpmm-badge-success">Sent</span></td>' +
+                            '<td style="text-align:center;">' +
+                                '<button class="wpmm-preview-btn" type="button" title="Preview email"' +
+                                ' data-id="' + row.id + '"' +
+                                ' data-subject="' + escHtml(row.subject) + '"' +
+                                ' data-to="' + escHtml(row.to) + '"' +
+                                ' data-sent="' + escHtml(row.sent_at) + '">' +
+                                '<span class="dashicons dashicons-visibility"></span>' +
+                                '</button>' +
+                            '</td>' +
+                            '<td>' +
+                                '<button class="wpmm-btn wpmm-btn-sm wpmm-resend-btn" data-id="' + row.id + '">' +
+                                '<span class="dashicons dashicons-controls-repeat"></span> Resend' +
+                                '</button>' +
+                            '</td>' +
+                            '</tr>';
 
-                    var $tbody = $('#wpmm-email-history-tbody');
-                    if ($tbody.length) {
-                        // Table exists — prepend to the top.
-                        $tbody.prepend(newRow);
-                    } else {
-                        // First ever send — the empty-state placeholder is showing.
-                        // Build the full table and replace the placeholder.
-                        var $empty = $('#wpmm-email-history-empty');
-                        var table  =
-                            '<table class="wpmm-table" id="wpmm-email-history-table">' +
-                            '<thead><tr>' +
-                            '<th>Sent At</th><th>To</th><th>Subject</th>' +
-                            '<th>Status</th>' +
-                            '<th style="text-align:center;">Preview</th>' +
-                            '<th>Resend</th>' +
-                            '</tr></thead>' +
-                            '<tbody id="wpmm-email-history-tbody">' + newRow + '</tbody>' +
-                            '</table>';
-                        $empty.replaceWith(table);
-                    }
+                        var $tbody = $('#wpmm-email-history-tbody');
+                        if ($tbody.length) {
+                            $tbody.prepend(newRow);
+                        } else {
+                            var $empty = $('#wpmm-email-history-empty');
+                            var table  =
+                                '<table class="wpmm-table" id="wpmm-email-history-table">' +
+                                '<thead><tr>' +
+                                '<th>Sent At</th><th>To</th><th>Subject</th>' +
+                                '<th>Status</th>' +
+                                '<th style="text-align:center;">Preview</th>' +
+                                '<th>Resend</th>' +
+                                '</tr></thead>' +
+                                '<tbody id="wpmm-email-history-tbody">' + newRow + '</tbody>' +
+                                '</table>';
+                            $empty.replaceWith(table);
+                        }
 
-                    // Brief highlight so the user sees the new row land.
-                    setTimeout(function () {
-                        $('#wpmm-email-row-' + row.id).addClass('wpmm-history-new-active');
+                        // Green flash so the user sees the new row land.
                         setTimeout(function () {
-                            $('#wpmm-email-row-' + row.id).removeClass('wpmm-history-new-active');
-                        }, 2000);
-                    }, 50);
+                            $('#wpmm-email-row-' + row.id).addClass('wpmm-history-new-active');
+                            setTimeout(function () {
+                                $('#wpmm-email-row-' + row.id).removeClass('wpmm-history-new-active');
+                            }, 2000);
+                        }, 50);
+                    }
+                } else {
+                    $result.html(
+                        '<div class="wpmm-notice wpmm-notice-error">' +
+                        '<span class="dashicons dashicons-warning"></span> ' +
+                        escHtml(res.data || 'Send failed.') + '</div>'
+                    );
                 }
-            } else {
-                $result.html(
-                    '<div class="wpmm-notice wpmm-notice-error">' +
-                    '<span class="dashicons dashicons-warning"></span> ' +
-                    escHtml(res.data || 'Send failed.') + '</div>'
-                );
+            },
+            error: function (xhr, status) {
+                $btn.prop('disabled', false)
+                    .html('<span class="dashicons dashicons-email"></span> Send Report Email');
+                var msg = status === 'timeout'
+                    ? 'Request timed out. Please try again.'
+                    : 'AJAX request failed (HTTP ' + (xhr.status || '?') + '). Please try again.';
+                $result.html('<div class="wpmm-notice wpmm-notice-error">' + escHtml(msg) + '</div>');
             }
-        }).fail(function () {
-            $btn.prop('disabled', false)
-                .html('<span class="dashicons dashicons-email"></span> Send Report Email');
-            $result.html('<div class="wpmm-notice wpmm-notice-error">AJAX request failed.</div>');
         });
     });
 

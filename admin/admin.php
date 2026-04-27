@@ -421,14 +421,17 @@ function wpmm_render_spam_log() {
     }
 
     if ( $args ) {
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // $where is built from hardcoded SQL fragments and %s/%d placeholders only —
+        // no user input is interpolated directly. Suppression is required because the
+        // checker cannot statically verify the dynamic WHERE clause construction.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
         $rows = $wpdb->get_results( $wpdb->prepare(
-            "SELECT * FROM {$spam_table} {$where} ORDER BY blocked_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+            'SELECT * FROM ' . $spam_table . $where . ' ORDER BY blocked_at DESC LIMIT %d OFFSET %d',
             array_merge( $args, [ $per_page, $offset ] )
         ) );
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
         $total = (int) $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) FROM {$spam_table} {$where}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+            'SELECT COUNT(*) FROM ' . $spam_table . $where,
             $args
         ) );
     } else {
@@ -1152,11 +1155,13 @@ function wpmm_render_log() {
 
     if ( ! empty( $page_sids ) ) {
         $sid_placeholders = implode( ',', array_fill( 0, count( $page_sids ), '%s' ) );
+        // Dynamic IN() clause — $sid_placeholders is '%s,%s,...' built via array_fill(),
+        // one per session ID. $log_table is esc_sql()'d at assignment above.
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
         $rows = $wpdb->get_results( $wpdb->prepare(
-            "SELECT * FROM {$log_table} WHERE
-             CASE WHEN session_id != '' THEN session_id ELSE CONCAT('legacy-', DATE(updated_at)) END
-             IN ({$sid_placeholders}) ORDER BY updated_at ASC",
+            'SELECT * FROM ' . $log_table . ' WHERE
+             CASE WHEN session_id != \'\' THEN session_id ELSE CONCAT(\'legacy-\', DATE(updated_at)) END
+             IN (' . $sid_placeholders . ') ORDER BY updated_at ASC',
             $page_sids
         ) );
 
