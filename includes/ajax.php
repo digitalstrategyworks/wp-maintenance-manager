@@ -76,30 +76,18 @@ function wpmm_ajax_run_update() {
         wp_send_json_error( 'Missing parameters.' );
     }
 
-    $switched = false;
-    if ( is_multisite() && $site_id > 0 && $site_id !== get_current_blog_id() ) {
-        switch_to_blog( $site_id );
-        $switched = true;
-    }
-
     // ── Active plugin snapshot ────────────────────────────────────────────────
-    // WordPress's upgrader can call deactivate_plugins() as part of error
-    // recovery, deactivating plugins that were never part of the failing update.
+    // IMPORTANT: snapshot must be taken BEFORE switch_to_blog() so we capture
+    // the true network state. After switch_to_blog(), get_option('active_plugins')
+    // returns the sub-site's plugin list, not the main site's. We need the full
+    // pre-update state from the correct context.
     //
-    // On multisite, plugins can be active in two places:
-    //   active_plugins          — per-site option (site-level activation)
-    //   active_sitewide_plugins — network option (network/sitewide activation)
-    //
-    // Google Site Kit, Sucuri, Microsoft Clarity and similar are typically
-    // network-activated — stored in active_sitewide_plugins, NOT active_plugins.
-    // Previous versions of this fix only restored active_plugins and therefore
-    // missed network-activated plugins entirely.
-    //
-    // We snapshot BOTH options and restore BOTH if deactivation is detected.
-    // The snapshot is persisted as a transient keyed to the session ID so
-    // retries restore from the original pre-batch state.
+    // We use get_site_transient/set_site_transient (network-level) rather than
+    // get_transient/set_transient (per-blog) because per-blog transients are
+    // stored in the current blog's options table and are lost when blog context
+    // switches mid-request via switch_to_blog().
     $snapshot_key = 'wpmm_active_snapshot_' . md5( $session_id ?: 'default' );
-    $snapshot     = get_transient( $snapshot_key );
+    $snapshot     = get_site_transient( $snapshot_key );
     if ( false === $snapshot ) {
         $snapshot = [
             'active_plugins'          => (array) get_option( 'active_plugins', [] ),
@@ -107,15 +95,29 @@ function wpmm_ajax_run_update() {
                 ? (array) get_site_option( 'active_sitewide_plugins', [] )
                 : [],
         ];
-        set_transient( $snapshot_key, $snapshot, 30 * MINUTE_IN_SECONDS );
+        set_site_transient( $snapshot_key, $snapshot, 30 * MINUTE_IN_SECONDS );
     }
-    $active_before          = $snapshot['active_plugins'];
-    $sitewide_before        = $snapshot['active_sitewide_plugins'];
+    $active_before   = $snapshot['active_plugins'];
+    $sitewide_before = $snapshot['active_sitewide_plugins'];
     // ─────────────────────────────────────────────────────────────────────────
+
+    $switched = false;
+    if ( is_multisite() && $site_id > 0 && $site_id !== get_current_blog_id() ) {
+        switch_to_blog( $site_id );
+        $switched = true;
+    }
 
     $GLOBALS['wpmm_session_id'] = $session_id;
 
     $result = wpmm_do_update( $type, $slug, $package );
+
+    // Restore blog context BEFORE reading post-update plugin state.
+    // The snapshot was taken in the main site context (before switch_to_blog),
+    // so the comparison must also happen in the main site context.
+    if ( $switched ) {
+        restore_current_blog();
+        $switched = false; // Prevent double-restore below.
+    }
 
     // ── Restore collaterally deactivated plugins ──────────────────────────────
     if ( $type === 'plugin' ) {
@@ -124,7 +126,7 @@ function wpmm_ajax_run_update() {
             ? (array) get_site_option( 'active_sitewide_plugins', [] )
             : [];
 
-        $restored    = [];
+        $restored = [];
 
         // Restore site-level plugins.
         $deactivated = array_diff( $active_before, $active_after );
@@ -142,9 +144,7 @@ function wpmm_ajax_run_update() {
 
         // Restore network-activated plugins (multisite only).
         if ( is_multisite() && ! empty( $sitewide_before ) ) {
-            // active_sitewide_plugins is keyed by plugin file path with timestamp values.
             $deactivated_keys = array_diff_key( $sitewide_before, $sitewide_after );
-            // Remove the slug we just updated from restore candidates.
             unset( $deactivated_keys[ $slug ] );
             if ( ! empty( $deactivated_keys ) ) {
                 $new_sitewide = array_merge( $sitewide_after, $deactivated_keys );
@@ -158,9 +158,7 @@ function wpmm_ajax_run_update() {
         }
 
         if ( ! empty( $restored ) ) {
-            // Update the transient so subsequent requests in this batch see
-            // the corrected state rather than re-restoring already-active plugins.
-            set_transient( $snapshot_key, [
+            set_site_transient( $snapshot_key, [
                 'active_plugins'          => $new_active,
                 'active_sitewide_plugins' => $new_sitewide,
             ], 30 * MINUTE_IN_SECONDS );

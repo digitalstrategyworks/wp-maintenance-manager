@@ -6,7 +6,7 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        2.0.9
+Stable tag:        2.1.0
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
@@ -618,6 +618,21 @@ identity in a manner that implies endorsement or affiliation is prohibited.
 For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
+
+= 2.1.0 =
+* Critical fix: network-activated plugins (AIOSEO, Co-Authors Plus,
+  Gravity Forms, Sucuri) were still being deactivated on subdirectory
+  multisite networks despite the v2.0.8 fix. Three root causes identified
+  and resolved: (1) the snapshot was being taken AFTER switch_to_blog(),
+  meaning it captured the sub-site plugin list rather than the main site
+  network state; (2) per-blog transients (get_transient/set_transient)
+  were used for the snapshot, which are stored in the current blog's
+  options table and lost when blog context switches mid-request — replaced
+  with network-level site transients (get_site_transient/set_site_transient);
+  (3) restore_current_blog() was called after reading the post-update plugin
+  state, meaning the comparison was in the wrong blog context — blog context
+  is now restored before reading post-update state so both snapshot and
+  post-update reads happen in the same (main site) context.
 
 = 2.0.9 =
 * Critical fix: HTTP 500 errors on managed hosting (Kinsta, WP Engine)
