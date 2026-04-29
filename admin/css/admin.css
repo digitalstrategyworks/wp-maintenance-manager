@@ -1,0 +1,1694 @@
+/* ── Site Maintenance Manager Admin Styles ─────────────────────────────────── */
+
+:root {
+    --wpmm-blue:    #1e3a5f;
+    --wpmm-blue2:   #2563eb;
+    --wpmm-green:   #16a34a;
+    --wpmm-red:     #dc2626;
+    --wpmm-orange:  #ea580c;
+    --wpmm-amber:   #d97706;
+    --wpmm-gray:    #6b7280;
+    --wpmm-border:  #e5e7eb;
+    --wpmm-bg:      #f8fafc;
+    --wpmm-white:   #ffffff;
+    --wpmm-shadow:  0 1px 4px rgba(0,0,0,.08);
+    --wpmm-radius:  8px;
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.wpmm-wrap { font-family: 'Georgia', serif; max-width: 1100px; }
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.wpmm-header {
+    background: var(--wpmm-blue);
+    color: #fff;
+    padding: 14px 28px 12px;
+    border-radius: var(--wpmm-radius) var(--wpmm-radius) 0 0;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;   /* vertical stack — rows top to bottom */
+    gap: 0;
+}
+
+/* Each row is its own horizontal flex line */
+.wpmm-header-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* Row 1: Greenskeeper product logo left, site info right */
+.wpmm-header-row-primary {
+    gap: 14px;
+    padding-bottom: 10px;
+}
+.wpmm-header-product-logo {
+    height: 30px;           /* product logo height — prominent but not giant */
+    width: auto;
+    display: block;
+    flex-shrink: 0;
+    /* transparent PNG — no filter or invert needed */
+}
+
+/* Site name / URL pushed to far right of row 1 */
+.wpmm-header-site {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #93c5fd;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.wpmm-header-site-sep { color: rgba(147,197,253,.4); }
+.wpmm-header-site-url { color: rgba(147,197,253,.75); }
+
+/* Row 2: Agency branding — secondary, below a subtle divider line */
+.wpmm-header-row-secondary {
+    gap: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,.15);
+}
+.wpmm-header-agency-logo {
+    height: 20px;           /* strict 20px cap — always small and secondary */
+    width: auto;
+    max-width: 72px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    flex-shrink: 0;
+    opacity: 0.75;
+}
+.wpmm-header-agency-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,.65);
+    white-space: nowrap;
+}
+
+/* Legacy stubs — these classes no longer render HTML but kept so
+   any external CSS overrides do not error */
+.wpmm-header-brand { display: contents; }
+.wpmm-header h1    { display: none; }
+.wpmm-header p     { display: none; }
+.wpmm-header-logo  {
+    height: 20px;
+    max-width: 72px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+.wpmm-tabs {
+    display: flex;
+    gap: 2px;
+    background: #162f4d;
+    padding: 0 20px;
+}
+.wpmm-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 20px;
+    color: #93c5fd;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 3px solid transparent;
+    transition: all .15s ease;
+}
+.wpmm-tab:hover { color: #fff; background: rgba(255,255,255,.07); }
+.wpmm-tab.active { color: #fff; border-bottom-color: #60a5fa; background: rgba(255,255,255,.1); }
+.wpmm-tab .dashicons { font-size: 16px; width: 16px; height: 16px; }
+
+/* ── Content ─────────────────────────────────────────────────────────────── */
+.wpmm-content { padding: 24px 0; }
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.wpmm-card {
+    background: var(--wpmm-white);
+    border: 1px solid var(--wpmm-border);
+    border-radius: var(--wpmm-radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--wpmm-shadow);
+}
+.wpmm-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--wpmm-blue);
+    margin: 0 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--wpmm-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.wpmm-card-title .dashicons { color: var(--wpmm-blue2); }
+
+/* ── Section within card ─────────────────────────────────────────────────── */
+.wpmm-section { margin-bottom: 28px; }
+.wpmm-section:last-child { margin-bottom: 0; }
+.wpmm-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--wpmm-gray);
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ── Forms ───────────────────────────────────────────────────────────────── */
+.wpmm-form-row { margin-bottom: 16px; }
+.wpmm-form-row label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--wpmm-blue);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.wpmm-input {
+    width: 100%;
+    max-width: 540px;
+    padding: 9px 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #111827;
+    background: #fff;
+    transition: border-color .15s;
+    box-sizing: border-box;
+}
+.wpmm-input:focus { outline: none; border-color: var(--wpmm-blue2); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+.wpmm-date-input { max-width: 160px; cursor: pointer; }
+
+.wpmm-subject-builder {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.wpmm-subject-prefix {
+    font-size: 13px;
+    color: var(--wpmm-blue);
+    background: #eff6ff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+}
+.wpmm-hint { font-size: 12px; color: var(--wpmm-gray); margin: 6px 0 0; }
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.wpmm-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.wpmm-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all .15s ease;
+    text-decoration: none;
+}
+.wpmm-btn .dashicons { font-size: 16px; width: 16px; height: 16px; }
+.wpmm-btn-primary  { background: var(--wpmm-blue2); color: #fff; }
+.wpmm-btn-primary:hover  { background: #1d4ed8; color: #fff; }
+.wpmm-btn-success  { background: var(--wpmm-green); color: #fff; }
+.wpmm-btn-success:hover  { background: #15803d; color: #fff; }
+.wpmm-btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid var(--wpmm-border); }
+.wpmm-btn-secondary:hover { background: #e5e7eb; color: #111; }
+.wpmm-btn-sm { padding: 5px 10px; font-size: 12px; }
+.wpmm-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Update item list ────────────────────────────────────────────────────── */
+.wpmm-item-list { list-style: none; margin: 0; padding: 0; }
+.wpmm-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--wpmm-border);
+}
+.wpmm-item:last-child { border-bottom: none; }
+.wpmm-item-checkbox { margin-top: 3px; width: 16px; height: 16px; cursor: pointer; }
+.wpmm-item-info { flex: 1; }
+.wpmm-item-name { font-weight: 700; font-size: 14px; color: #111827; margin: 0 0 2px; }
+.wpmm-item-meta { font-size: 12px; color: var(--wpmm-gray); }
+.wpmm-item-action { display: flex; align-items: center; gap: 10px; }
+.wpmm-item-status { font-size: 13px; font-weight: 600; min-width: 160px; text-align: right; }
+.wpmm-status-success { color: var(--wpmm-green); }
+.wpmm-status-failed  { color: var(--wpmm-red); }
+.wpmm-status-failed-reason { font-size: 12px; color: var(--wpmm-red); margin-top: 4px; font-weight: 400; }
+
+.wpmm-select-all-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 2px solid var(--wpmm-border);
+    margin-bottom: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--wpmm-blue);
+}
+
+/* ── No updates message ──────────────────────────────────────────────────── */
+.wpmm-all-good {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--wpmm-green);
+}
+.wpmm-all-good .dashicons { font-size: 48px; width: 48px; height: 48px; display: block; margin: 0 auto 12px; }
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.wpmm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.wpmm-table th {
+    background: #f3f4f6;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 700;
+    color: #374151;
+    border-bottom: 2px solid var(--wpmm-border);
+}
+.wpmm-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--wpmm-border);
+    color: #374151;
+    vertical-align: top;
+}
+.wpmm-table tr:hover td { background: #f9fafb; }
+.wpmm-empty { color: var(--wpmm-gray); font-style: italic; text-align: center; padding: 30px; }
+
+/* ── Email history — new row highlight (fades in on AJAX prepend) ─────────── */
+.wpmm-history-new-active td {
+    background: #f0fdf4 !important;
+    transition: background 1.8s ease;
+}
+
+/* ── Badges ──────────────────────────────────────────────────────────────── */
+.wpmm-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.wpmm-badge-success { background: #dcfce7; color: #15803d; }
+.wpmm-badge-error   { background: #fee2e2; color: #b91c1c; }
+
+/* ── Search form ─────────────────────────────────────────────────────────── */
+.wpmm-search-form { margin-bottom: 20px; }
+.wpmm-search-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.wpmm-search-row .wpmm-input { max-width: 240px; }
+
+/* ── Pagination ──────────────────────────────────────────────────────────── */
+.wpmm-pagination { margin-top: 16px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.wpmm-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #374151;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--wpmm-border);
+}
+.wpmm-page-btn.active { background: var(--wpmm-blue2); color: #fff; border-color: var(--wpmm-blue2); }
+.wpmm-page-info { font-size: 12px; color: var(--wpmm-gray); margin-left: 8px; }
+
+/* ── Notices ─────────────────────────────────────────────────────────────── */
+.wpmm-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 16px;
+}
+.wpmm-notice .dashicons { font-size: 20px; width: 20px; height: 20px; }
+.wpmm-notice-success { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.wpmm-notice-error   { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+.wpmm-notice-info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+
+/* ── Email preview ───────────────────────────────────────────────────────── */
+.wpmm-email-preview {
+    background: #f8fafc;
+    border: 1px solid var(--wpmm-border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+.wpmm-email-meta { display: flex; gap: 24px; flex-wrap: wrap; color: var(--wpmm-gray); margin-top: 6px; }
+
+/* ── Loading ─────────────────────────────────────────────────────────────── */
+.wpmm-loading { color: var(--wpmm-gray); display: flex; align-items: center; gap: 8px; padding: 20px 0; }
+@keyframes wpmm-spin { to { transform: rotate(360deg); } }
+.wpmm-spin { animation: wpmm-spin .8s linear infinite; display: inline-block; }
+
+/* ── Stored email display/edit (1.1.1) ───────────────────────────────────── */
+.wpmm-saved-email-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 13px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    max-width: 540px;
+}
+.wpmm-saved-email-address {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--wpmm-blue);
+    flex: 1;
+}
+.wpmm-edit-email-link,
+.wpmm-cancel-edit-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--wpmm-blue2);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.wpmm-edit-email-link:hover,
+.wpmm-cancel-edit-link:hover { text-decoration: underline; }
+
+.wpmm-email-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.wpmm-email-edit-row .wpmm-input { max-width: 360px; }
+
+/* ── Dashboard quick-nav tiles (1.1.2) ───────────────────────────────────── */
+.wpmm-dashboard-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 28px;
+}
+.wpmm-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 20px;
+    background: #f8fafc;
+    border: 1px solid var(--wpmm-border);
+    border-radius: var(--wpmm-radius);
+    text-decoration: none;
+    transition: all .15s ease;
+}
+.wpmm-tile:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    box-shadow: 0 2px 8px rgba(37,99,235,.1);
+    transform: translateY(-1px);
+}
+.wpmm-tile .dashicons {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: var(--wpmm-blue2);
+    margin-bottom: 4px;
+}
+.wpmm-tile strong {
+    font-size: 14px;
+    color: var(--wpmm-blue);
+    font-weight: 700;
+}
+.wpmm-tile span:last-child {
+    font-size: 12px;
+    color: var(--wpmm-gray);
+    line-height: 1.4;
+}
+
+/* ── Card description paragraph ─────────────────────────────────────────── */
+.wpmm-card-desc {
+    font-size: 13px;
+    color: var(--wpmm-gray);
+    margin: -8px 0 20px;
+    line-height: 1.6;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   UPDATE LOG — Session Accordion  (v1.2.0)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.wpmm-session-list {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Each session row */
+.wpmm-session-row {
+    border: 1px solid var(--wpmm-border);
+    border-radius: var(--wpmm-radius);
+    overflow: hidden;
+    background: var(--wpmm-white);
+    transition: box-shadow .15s ease;
+}
+.wpmm-session-row:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+}
+
+/* Clickable header bar */
+.wpmm-session-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: #f8fafc;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    gap: 12px;
+    transition: background .12s ease;
+}
+.wpmm-session-header:hover { background: #eff6ff; }
+.wpmm-session-header[aria-expanded="true"] { background: #eff6ff; }
+
+.wpmm-session-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+.wpmm-session-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: var(--wpmm-blue2);
+    flex-shrink: 0;
+}
+.wpmm-session-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.wpmm-session-date {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--wpmm-blue);
+}
+.wpmm-session-time {
+    font-size: 13px;
+    color: var(--wpmm-gray);
+}
+
+.wpmm-session-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* Count pills */
+.wpmm-session-counts { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.wpmm-count-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.wpmm-count-success { background: #dcfce7; color: #15803d; }
+.wpmm-count-fail    { background: #fee2e2; color: #b91c1c; }
+.wpmm-count-total   { background: #f1f5f9; color: #475569; }
+
+/* Animated caret */
+.wpmm-session-caret {
+    font-size: 12px;
+    color: var(--wpmm-gray);
+    display: inline-block;
+    transition: transform .2s ease;
+    flex-shrink: 0;
+}
+.wpmm-session-header[aria-expanded="true"] .wpmm-session-caret {
+    transform: rotate(180deg);
+}
+
+/* Expandable body */
+.wpmm-session-body {
+    border-top: 1px solid var(--wpmm-border);
+    padding: 0;
+    /* animate open/close */
+    animation: wpmm-slide-down .18s ease;
+}
+@keyframes wpmm-slide-down {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Inner table inside accordion */
+.wpmm-session-table { margin: 0; }
+.wpmm-session-table th { background: #f8fafc; }
+.wpmm-session-table td { vertical-align: top; }
+
+/* Error details disclosure */
+.wpmm-error-details {
+    font-size: 12px;
+    color: var(--wpmm-gray);
+}
+.wpmm-error-details summary {
+    cursor: pointer;
+    color: var(--wpmm-red);
+    font-weight: 600;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.wpmm-error-details summary::before { content: '▶ '; font-size: 9px; }
+.wpmm-error-details[open] summary::before { content: '▼ '; }
+.wpmm-error-details p { margin: 6px 0 0; line-height: 1.5; }
+.wpmm-action-note { color: var(--wpmm-amber); font-style: italic; }
+
+.wpmm-notes-cell { max-width: 320px; }
+.wpmm-note-text  { font-size: 12px; color: var(--wpmm-gray); }
+
+/* Legacy badge */
+.wpmm-badge-legacy { background: #fef9c3; color: #854d0e; }
+
+/* Card title sub-label */
+.wpmm-card-title-sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--wpmm-gray);
+    margin-left: 8px;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   EMAIL PREVIEW MODAL  (v1.2.0)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Eye / preview button in sent email table */
+.wpmm-preview-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    border: 1px solid var(--wpmm-border);
+    background: #f8fafc;
+    color: var(--wpmm-blue2);
+    cursor: pointer;
+    transition: all .15s ease;
+    padding: 0;
+}
+.wpmm-preview-btn:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: var(--wpmm-blue);
+    box-shadow: 0 2px 6px rgba(37,99,235,.12);
+    transform: scale(1.08);
+}
+.wpmm-preview-btn .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* Modal wrapper — class-based open/close to avoid [hidden] specificity battles */
+.wpmm-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+/* Closed state controlled by class, not [hidden], so our display:flex wins */
+.wpmm-modal.wpmm-modal-closed { display: none !important; }
+
+/* Generic hidden utility — higher specificity than element defaults */
+.wpmm-hidden { display: none !important; }
+
+.wpmm-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(3px);
+}
+
+.wpmm-modal-box {
+    position: relative;
+    z-index: 1;
+    width: min(760px, 100%);
+    max-height: 90vh;
+    background: var(--wpmm-white);
+    border-radius: 12px;
+    box-shadow: 0 25px 60px rgba(0,0,0,.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: wpmm-modal-in .2s ease;
+}
+@keyframes wpmm-modal-in {
+    from { opacity: 0; transform: scale(.96) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.wpmm-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--wpmm-border);
+    background: #f8fafc;
+    gap: 16px;
+    flex-shrink: 0;
+}
+.wpmm-modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--wpmm-blue);
+    margin: 0 0 4px;
+    font-family: Georgia, serif;
+}
+.wpmm-modal-subtitle {
+    font-size: 12px;
+    color: var(--wpmm-gray);
+    margin: 0;
+    line-height: 1.5;
+}
+.wpmm-modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--wpmm-border);
+    background: var(--wpmm-white);
+    color: var(--wpmm-gray);
+    cursor: pointer;
+    padding: 0;
+    transition: all .12s ease;
+    flex-shrink: 0;
+}
+.wpmm-modal-close:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: var(--wpmm-red);
+}
+.wpmm-modal-close .dashicons { font-size: 18px; width: 18px; height: 18px; }
+
+.wpmm-modal-body {
+    flex: 1;
+    overflow-y: auto;   /* MUST be auto/scroll — hidden clips the iframe */
+    overflow-x: hidden;
+    position: relative;
+    min-height: 300px;
+}
+/* Loading wrapper inside modal — always flex when visible */
+.wpmm-modal-loading-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--wpmm-gray);
+    background: #fff;
+    z-index: 2;
+}
+.wpmm-modal-loading-wrap.wpmm-hidden { display: none !important; }
+
+/* Iframe — expands to content height via JS after load.
+   The min-height covers the loading state; JS sets the final height. */
+.wpmm-modal-iframe {
+    width: 100%;
+    height: 600px;          /* sensible starting height before JS resize */
+    min-height: 400px;
+    border: none;
+    display: block;
+    position: relative;
+    z-index: 1;
+}
+.wpmm-modal-iframe.wpmm-hidden { display: none !important; }
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DASHBOARD SUMMARY CARDS  (v1.3.0)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.wpmm-dashboard-summary {
+    display: grid;
+    grid-template-columns: repeat( auto-fit, minmax(260px, 1fr) );
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.wpmm-summary-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px 20px;
+    background: var(--wpmm-white);
+    border: 1px solid var(--wpmm-border);
+    border-radius: var(--wpmm-radius);
+    box-shadow: var(--wpmm-shadow);
+}
+.wpmm-summary-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    color: var(--wpmm-blue2);
+    margin-top: 2px;
+}
+.wpmm-summary-card > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.wpmm-summary-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--wpmm-gray);
+}
+.wpmm-summary-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--wpmm-blue);
+    word-break: break-word;
+}
+.wpmm-summary-edit {
+    font-size: 11px;
+    color: var(--wpmm-blue2);
+    text-decoration: none;
+    margin-left: 8px;
+    font-weight: 600;
+}
+.wpmm-summary-edit:hover { text-decoration: underline; }
+
+.wpmm-summary-update .wpmm-summary-icon { color: #16a34a; }
+.wpmm-summary-email  .wpmm-summary-icon { color: var(--wpmm-blue2); }
+.wpmm-summary-admin  .wpmm-summary-icon { color: var(--wpmm-amber); }
+.wpmm-summary-brand  .wpmm-summary-icon { color: #7c3aed; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SETTINGS PAGE  (v1.3.1)
+   Matches the visual language of all other plugin pages:
+   wpmm-card > wpmm-card-title + wpmm-card-desc + form sections.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Two-column settings group ──────────────────────────────────────────── */
+/* label column (left) + control column (right), collapses to single column
+   on narrow viewports (< 700 px) */
+.wpmm-settings-group {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0 28px;
+    align-items: start;
+    padding: 20px 0;
+}
+@media (max-width: 700px) {
+    .wpmm-settings-group { grid-template-columns: 1fr; gap: 10px; }
+}
+
+.wpmm-settings-group-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 2px;
+}
+.wpmm-settings-group-label strong {
+    font-size: 13px;
+    color: var(--wpmm-blue);
+    font-weight: 700;
+}
+.wpmm-settings-group-label span {
+    font-size: 12px;
+    color: var(--wpmm-gray);
+    line-height: 1.5;
+}
+
+.wpmm-settings-group-control {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Horizontal rule between groups inside a card */
+.wpmm-settings-divider {
+    height: 1px;
+    background: var(--wpmm-border);
+    margin: 0;
+}
+
+/* ── Logo uploader well ──────────────────────────────────────────────────── */
+.wpmm-logo-well {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    background: #f8fafc;
+    border: 2px dashed var(--wpmm-border);
+    border-radius: var(--wpmm-radius);
+    min-height: 80px;
+    max-width: 420px;
+    transition: border-color .15s;
+}
+.wpmm-logo-well:has(.wpmm-logo-preview-img) {
+    border-style: solid;
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
+.wpmm-logo-preview-img {
+    max-height: 64px;
+    max-width: 200px;
+    object-fit: contain;
+    display: block;
+    border-radius: 4px;
+}
+
+.wpmm-logo-empty-state {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #9ca3af;
+    font-size: 13px;
+}
+.wpmm-logo-empty-state .dashicons {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: #d1d5db;
+}
+
+/* Remove button overlaid on the logo */
+.wpmm-logo-remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid #fca5a5;
+    background: #fee2e2;
+    color: var(--wpmm-red);
+    cursor: pointer;
+    padding: 0;
+    transition: all .12s ease;
+    line-height: 1;
+}
+.wpmm-logo-remove-btn:hover {
+    background: var(--wpmm-red);
+    border-color: var(--wpmm-red);
+    color: #fff;
+}
+.wpmm-logo-remove-btn .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+.wpmm-logo-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.wpmm-logo-actions .wpmm-hint {
+    margin: 0;
+    font-size: 12px;
+}
+
+/* ── Inline save/edit fields (shared by company name + client email) ─────── */
+.wpmm-saved-field-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 13px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    max-width: 420px;
+}
+.wpmm-saved-field-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--wpmm-blue);
+    flex: 1;
+    word-break: break-word;
+}
+.wpmm-edit-field-link,
+.wpmm-cancel-field-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--wpmm-blue2);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.wpmm-edit-field-link:hover,
+.wpmm-cancel-field-link:hover { text-decoration: underline; }
+
+.wpmm-field-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.wpmm-field-edit-row .wpmm-input {
+    max-width: 340px;
+}
+
+/* ── Administrators table ────────────────────────────────────────────────── */
+.wpmm-admin-table-wrap {
+    margin-top: 4px;
+    border: 1px solid var(--wpmm-border);
+    border-radius: var(--wpmm-radius);
+    overflow: hidden;
+}
+
+.wpmm-settings-admin-table {
+    margin: 0;
+    border: none;
+}
+.wpmm-settings-admin-table thead th {
+    background: #f3f4f6;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #6b7280;
+    font-weight: 700;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--wpmm-border);
+}
+.wpmm-settings-admin-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--wpmm-border);
+    vertical-align: middle;
+}
+.wpmm-settings-admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.wpmm-settings-admin-table tbody tr:hover td {
+    background: #f8fafc;
+}
+
+/* Highlight the currently selected default row */
+.wpmm-admin-row-selected td {
+    background: #eff6ff !important;
+}
+.wpmm-admin-row-selected:hover td {
+    background: #dbeafe !important;
+}
+
+.wpmm-col-radio {
+    width: 56px;
+    text-align: center;
+}
+.wpmm-col-radio input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--wpmm-blue2);
+}
+
+/* Admin identity cell — avatar + name stacked */
+.wpmm-admin-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.wpmm-admin-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.wpmm-admin-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--wpmm-blue);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.wpmm-default-badge {
+    font-size: 10px !important;
+    padding: 2px 7px !important;
+}
+
+.wpmm-email-link {
+    color: var(--wpmm-blue2);
+    text-decoration: none;
+    font-size: 13px;
+}
+.wpmm-email-link:hover { text-decoration: underline; }
+
+.wpmm-text-muted {
+    font-size: 13px;
+    color: var(--wpmm-gray);
+}
+
+/* Save button row at the bottom of the administrators card */
+.wpmm-settings-save-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-top: 18px;
+    border-top: 1px solid var(--wpmm-border);
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.wpmm-save-feedback {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ── Card title row with action button ──────────────────────────────────── */
+.wpmm-card-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--wpmm-border);
+}
+.wpmm-card-title-row .wpmm-card-title {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+/* ── Search autocomplete (v1.3.9) ────────────────────────────────────────── */
+.wpmm-autocomplete-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+    max-width: 340px;
+}
+.wpmm-autocomplete-wrap .wpmm-input {
+    width: 100%;
+    max-width: none;
+}
+.wpmm-autocomplete-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+    background: var(--wpmm-white);
+    border: 1px solid #bfdbfe;
+    border-radius: var(--wpmm-radius);
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    max-height: 260px;
+    overflow-y: auto;
+}
+.wpmm-autocomplete-list[hidden] { display: none; }
+
+.wpmm-autocomplete-list li {
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--wpmm-blue);
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background .08s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wpmm-autocomplete-list li:last-child { border-bottom: none; }
+.wpmm-autocomplete-list li:hover,
+.wpmm-autocomplete-list li.wpmm-ac-active {
+    background: #eff6ff;
+    color: var(--wpmm-blue2);
+}
+
+/* ── Database diagnostic panel ───────────────────────────────────────────── */
+.wpmm-debug-card {
+    border: 1px solid #fde68a;
+    background: #fffbeb;
+    margin-top: 16px;
+}
+.wpmm-debug-card[open] { background: #fff; }
+.wpmm-debug-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: #92400e;
+    list-style: none;
+    border-radius: var(--wpmm-radius);
+}
+.wpmm-debug-summary::-webkit-details-marker { display: none; }
+.wpmm-debug-summary .dashicons { color: #d97706; }
+.wpmm-debug-card[open] .wpmm-debug-summary {
+    border-bottom: 1px solid var(--wpmm-border);
+    border-radius: var(--wpmm-radius) var(--wpmm-radius) 0 0;
+}
+.wpmm-debug-body {
+    padding: 16px 20px;
+    font-size: 13px;
+}
+.wpmm-debug-body p { margin: 6px 0; }
+.wpmm-debug-body h4 { font-size: 13px; }
+
+/* ── Previous / Next pagination bar (v1.4.3) ─────────────────────────────── */
+.wpmm-pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-top: 1px solid var(--wpmm-border);
+    border-bottom: 1px solid var(--wpmm-border);
+    margin: 12px 0;
+}
+/* First instance (top) — no top border since card already has a separator */
+.wpmm-session-list + .wpmm-pagination-bar,
+.wpmm-search-form + .wpmm-pagination-bar {
+    border-top: none;
+    margin-top: 0;
+}
+
+.wpmm-pagination-nav {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.wpmm-page-prev,
+.wpmm-page-next {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--wpmm-border);
+    background: var(--wpmm-white);
+    color: var(--wpmm-blue2);
+    text-decoration: none;
+    transition: all .12s ease;
+    white-space: nowrap;
+}
+.wpmm-page-prev:hover,
+.wpmm-page-next:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: var(--wpmm-blue);
+}
+.wpmm-page-prev.disabled,
+.wpmm-page-next.disabled {
+    color: #d1d5db;
+    border-color: #f3f4f6;
+    background: #f9fafb;
+    cursor: default;
+    pointer-events: none;
+}
+.wpmm-page-prev .dashicons,
+.wpmm-page-next .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+.wpmm-page-info {
+    font-size: 12px;
+    color: var(--wpmm-gray);
+    text-align: center;
+}
+
+/* Small input variant for the per-page selector */
+.wpmm-input-sm {
+    padding: 5px 8px;
+    font-size: 12px;
+    height: auto;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SMTP SETTINGS CARD  (v1.4.4)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Mailer tile grid */
+.wpmm-mailer-grid {
+    display: grid;
+    grid-template-columns: repeat( auto-fill, minmax(150px, 1fr) );
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.wpmm-mailer-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 14px 10px 12px;
+    border: 2px solid var(--wpmm-border);
+    border-radius: var(--wpmm-radius);
+    background: #f8fafc;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .14s, background .14s, box-shadow .14s;
+    min-height: 90px;
+}
+.wpmm-mailer-tile:hover {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    box-shadow: 0 2px 8px rgba(37,99,235,.1);
+}
+.wpmm-mailer-tile.wpmm-mailer-active {
+    border-color: var(--wpmm-blue2);
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+.wpmm-mailer-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    color: var(--wpmm-blue2);
+}
+.wpmm-mailer-active .wpmm-mailer-icon {
+    color: var(--wpmm-blue);
+}
+.wpmm-mailer-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--wpmm-blue);
+    line-height: 1.3;
+}
+.wpmm-mailer-sub {
+    font-size: 11px;
+    color: var(--wpmm-gray);
+    line-height: 1.3;
+}
+.wpmm-mailer-check {
+    position: absolute;
+    top: 6px;
+    right: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--wpmm-blue2);
+}
+
+/* Provider help text */
+.wpmm-mailer-help-wrap {
+    margin-bottom: 4px;
+}
+.wpmm-mailer-help {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--wpmm-radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #1e40af;
+    line-height: 1.6;
+    display: none; /* JS controls visibility */
+}
+.wpmm-mailer-help a { color: var(--wpmm-blue2); }
+.wpmm-mailer-help code {
+    background: rgba(37,99,235,.1);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+/* ── Progress bar (v1.5.1) ───────────────────────────────────────────────── */
+.wpmm-progress-wrap {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--wpmm-radius);
+    padding: 16px 20px;
+    margin-bottom: 0;
+}
+
+.wpmm-progress-bar-track {
+    width: 100%;
+    background: #dbeafe;
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.wpmm-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    border-radius: 999px;
+    width: 0%;
+    transition: width 0.35s ease;
+}
+
+.wpmm-progress-label {
+    font-size: 13px;
+    color: #1e40af;
+    font-weight: 500;
+    min-height: 20px;
+}
+
+/* ── Tip card (v1.5.1) ───────────────────────────────────────────────────── */
+.wpmm-tip-card {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+    border-color: #fde68a !important;
+    margin-top: 28px !important;
+    margin-bottom: 0 !important;
+}
+
+.wpmm-tip-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.wpmm-tip-coffee {
+    font-size: 36px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.wpmm-tip-body {
+    flex: 1;
+}
+
+.wpmm-tip-text {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: #78350f;
+    line-height: 1.6;
+}
+
+.wpmm-tip-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.wpmm-tip-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity .15s, transform .1s;
+}
+.wpmm-tip-btn:hover {
+    opacity: .88;
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.wpmm-tip-btn-paypal {
+    background: #0070ba;
+    color: #fff !important;
+}
+
+.wpmm-tip-venmo {
+    font-size: 13px;
+    color: #78350f;
+}
+
+.wpmm-tip-venmo-handle {
+    display: inline-block;
+    background: #008CFF;
+    color: #fff;
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .01em;
+    margin-left: 2px;
+}
+
+/* ── jQuery UI Datepicker styles (replaces external CDN dependency) ─────── */
+/* Scoped to our plugin pages only via .wpmm-wrap context where possible.   */
+.ui-datepicker {
+    width: 17em;
+    padding: .2em .2em 0;
+    background: #fff;
+    border: 1px solid #c0c0c0;
+    border-radius: 4px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1d2327;
+    display: none;
+    z-index: 9999 !important;
+}
+.ui-datepicker .ui-datepicker-header {
+    position: relative;
+    padding: .4em 0;
+    background: #1e3a5f;
+    color: #fff;
+    border-radius: 3px 3px 0 0;
+    border: none;
+    font-weight: 700;
+    text-align: center;
+}
+.ui-datepicker .ui-datepicker-prev,
+.ui-datepicker .ui-datepicker-next {
+    position: absolute;
+    top: 2px;
+    width: 1.8em;
+    height: 1.8em;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.8em;
+    text-align: center;
+    border-radius: 3px;
+}
+.ui-datepicker .ui-datepicker-prev { left: 2px; }
+.ui-datepicker .ui-datepicker-next { right: 2px; }
+.ui-datepicker .ui-datepicker-prev:hover,
+.ui-datepicker .ui-datepicker-next:hover { background: rgba(255,255,255,.2); }
+.ui-datepicker .ui-datepicker-prev span,
+.ui-datepicker .ui-datepicker-next span { display: none; }
+.ui-datepicker .ui-datepicker-prev::after { content: "‹"; font-size: 16px; }
+.ui-datepicker .ui-datepicker-next::after { content: "›"; font-size: 16px; }
+.ui-datepicker .ui-datepicker-title {
+    margin: 0 2em;
+    line-height: 1.8em;
+    text-align: center;
+    font-size: 13px;
+}
+.ui-datepicker table {
+    width: 100%;
+    font-size: .9em;
+    border-collapse: collapse;
+    margin: 0 0 .4em;
+}
+.ui-datepicker th {
+    padding: .7em .3em;
+    text-align: center;
+    font-weight: 700;
+    border: 0;
+    color: #646970;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+.ui-datepicker td {
+    border: 0;
+    padding: 1px;
+}
+.ui-datepicker td span,
+.ui-datepicker td a {
+    display: block;
+    padding: .4em;
+    text-align: center;
+    text-decoration: none;
+    color: #1d2327;
+    border-radius: 3px;
+    border: 1px solid transparent;
+}
+.ui-datepicker td a:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1e3a5f;
+}
+.ui-datepicker .ui-datepicker-today a {
+    background: #f0f0f1;
+    font-weight: 700;
+}
+.ui-datepicker .ui-state-active,
+.ui-datepicker .ui-state-highlight {
+    background: #1e3a5f !important;
+    color: #fff !important;
+    border-color: #1e3a5f !important;
+}
+.ui-datepicker .ui-datepicker-buttonpane {
+    background-image: none;
+    margin: .5em 0 0;
+    padding: 0 .2em;
+    border-top: 1px solid #e5e7eb;
+}
+.ui-datepicker-calendar .ui-state-disabled span {
+    color: #c0c0c0;
+}
+
+/* ── Manual Updates Repeater (v1.5.6) ───────────────────────────────────── */
+.wpmm-manual-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--wpmm-border);
+}
+.wpmm-manual-row:last-child { border-bottom: none; }
+
+.wpmm-manual-select {
+    flex: 2;
+    min-width: 200px;
+}
+
+.wpmm-manual-versions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.wpmm-manual-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--wpmm-gray);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 4px;
+}
+
+.wpmm-manual-remove {
+    flex-shrink: 0;
+    color: var(--wpmm-red) !important;
+    border-color: #fca5a5 !important;
+}
+.wpmm-manual-remove:hover {
+    background: #fee2e2 !important;
+}
+
+/* ── Toggle switch (v1.6.0) ──────────────────────────────────────────────── */
+.wpmm-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+.wpmm-toggle input { opacity: 0; width: 0; height: 0; }
+.wpmm-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #d1d5db;
+    border-radius: 999px;
+    transition: background .2s;
+}
+.wpmm-toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.wpmm-toggle input:checked + .wpmm-toggle-slider { background: #2563eb; }
+.wpmm-toggle input:checked + .wpmm-toggle-slider::before { transform: translateX(20px); }
+
+.wpmm-toggle-label {
+    font-size: 13px;
+    color: var(--wpmm-gray);
+    margin-left: 4px;
+}
+
+/* ── Spam filter settings subhead ────────────────────────────────────────── */
+.wpmm-settings-subhead {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--wpmm-blue);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin: 20px 0 14px;
+    display: flex;
+    align-items: center;
+}
+
+/* ── Site Scope Bar (Network Admin, v1.9.0) ──────────────────────────────── */
+.wpmm-scope-bar {
+    background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid var(--wpmm-blue);
+    padding: 12px 18px !important;
+}
+.wpmm-scope-bar strong {
+    color: var(--wpmm-dark);
+}
