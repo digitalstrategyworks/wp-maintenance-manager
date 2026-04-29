@@ -1,6 +1,6 @@
 # Greenskeeper
 
-**Version:** 2.1.2  
+**Version:** 2.1.3  
 **Author:** [Tony Zeoli](https://digitalstrategyworks.com)  
 **License:** [GPL-2.0+](https://www.gnu.org/licenses/gpl-2.0.html)  
 **Copyright:** © 2026 Digital Strategy Works LLC  
@@ -862,7 +862,55 @@ For licensing enquiries: [tony@digitalstrategyworks.com](mailto:tony@digitalstra
 - Critical fix: SQL_NO_CACHE removed — caused fatal error on MySQL 8.0+
 - Live autocomplete search on Update Log
 
-### 1.3.0
+### 2.1.3
+- Fix: HTTP 500 from WP Offload Media Pro (Delicious Brains updater) throwing `ValueError` during upgrade — all upgrader calls now wrapped in `try/catch \Throwable`
+- Fix: HTTP 500 on some multisite networks — per-site snapshot/restore loops wrapped in `try/catch` for graceful fallback
+
+### 2.1.2
+- Fix: Sub-site-specific plugins (e.g. CPTUI activated on one sub-site only) now correctly restored after collateral deactivation — snapshot now covers all sites in the network
+
+### 2.1.1 (superseded by 2.1.2)
+- Fix: Snapshot taken before `switch_to_blog()`, network-level site transients, blog context restored before post-update comparison
+
+### 2.1.0
+- Critical fix: network-activated plugins on subdirectory multisite now correctly restored — snapshot timing, transient scope, and blog context all corrected
+
+### 2.0.9
+- Critical fix: HTTP 500 on managed hosting (Kinsta) — removed blocking `wp_update_plugins/themes()` calls from AJAX context, replaced with background cron
+
+### 2.0.8
+- Critical fix: network-activated plugins (Site Kit, Sucuri, Clarity) now restored after collateral deactivation — `active_sitewide_plugins` added to snapshot
+- Feature: email reports group multiple sessions by date with clear headers
+- Fix: Sent Email History updates immediately after send (no page refresh)
+- Tests: 17-assertion unit test suite added
+
+### 2.0.7
+- Feature: Backup warning modal before any update action
+- Fix: Collateral deactivation restore works on retries via session-keyed transient
+
+### 2.0.6
+- Fix: Collateral plugin deactivation — active plugins snapshotted before each update and restored after
+
+### 2.0.5
+- Security: Cross-site AJAX cap bypass, Akismet site scoping, spam log actions, REST API key hashed
+- Fix: All-Sites network email order, dashboard date, log pagination in SQL, false success banner
+
+### 2.0.4
+- Feature: Email reports accumulate all unsent sessions into one combined report
+
+### 2.0.3
+- Fix: AIOSEO Pro incorrectly flagged as manual update
+
+### 2.0.2
+- Fix: Divi and premium themes — freshness check, skin error surfacing, auto-retry
+
+### 2.0.1
+- Fix: Jetpack copy error correctly reported; Gravity Forms add-ons show manual update warning
+
+### 2.0.0
+- Premium plugin updates confirmed working; AIOSEO Pro auto-retry verified
+
+
 - New: Settings page (logo, company name, client email, default administrator)
 - Email template: agency branding, administrator attribution, sectioned Core/Plugins/Themes tables
 

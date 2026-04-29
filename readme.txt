@@ -6,7 +6,7 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        2.1.2
+Stable tag:        2.1.3
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
@@ -619,7 +619,7 @@ For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
 
-= 2.1.2 =
+= 2.1.3 =
 * Fix: HTTP 500 errors on some multisite networks caused by the per-site
   snapshot loop introduced in v2.1.1. Both the snapshot and restore loops
   are now wrapped in try/catch blocks for graceful fallback.
