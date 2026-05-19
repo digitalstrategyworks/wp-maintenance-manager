@@ -6,7 +6,7 @@ Tags:              maintenance, updates, smtp, email, multisite
 Requires at least: 5.8
 Tested up to:      6.9
 Requires PHP:      8.0
-Stable tag:        2.1.8
+Stable tag:        2.1.9
 License:           GPL-2.0+
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Copyright:         2026 Digital Strategy Works LLC
@@ -659,6 +659,19 @@ identity in a manner that implies endorsement or affiliation is prohibited.
 For licensing enquiries contact: tony@digitalstrategyworks.com
 
 == Changelog ==
+
+= 2.1.9 =
+* Feature: Resend from Update Log — each session in the Update Log now
+  has a "Send Report →" button that navigates to the Email Reports page
+  with that session pre-loaded. If the session was previously emailed,
+  an amber notice shows when it was sent and to whom. The subject line
+  is automatically prefixed with [Updated Report] and the email body
+  includes a blue banner informing the recipient this is an update to
+  a previously sent report, with the original send date and time.
+* Fix: Manual updates on the Email Reports page are now always included
+  alongside the automated session log entries when sending — previously
+  adding manual entries caused only the manual entries to appear in the
+  email, dropping the full automated update list.
 
 = 2.1.8 =
 * Fix: Email Reports scope selector now honored on multisite (Codex

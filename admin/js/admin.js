@@ -664,16 +664,18 @@ jQuery(function ($) {
             method:  'POST',
             timeout: 60000,
             data: {
-                action:          'wpmm_send_email',
-                nonce:           wpmm.nonce,
-                to_email:        toEmail,
-                subject:         subject,
-                session_id:      resolvedSession,
-                admin_id:        performingAdminId,
-                manual_entries:  manualEntries,
-                update_note:     updateNote,
-                site_id:         $('#wpmm-email-scope-site-id').val() || 0,
-                network_all:     ($('#wpmm-email-scope-site-id').length && $('#wpmm-email-scope-site-id').val() == '0') ? 1 : 0
+                action:           'wpmm_send_email',
+                nonce:            wpmm.nonce,
+                to_email:         toEmail,
+                subject:          subject,
+                session_id:       resolvedSession,
+                admin_id:         performingAdminId,
+                manual_entries:   manualEntries,
+                update_note:      updateNote,
+                site_id:          $('#wpmm-email-scope-site-id').val() || 0,
+                network_all:      ($('#wpmm-email-scope-site-id').length && $('#wpmm-email-scope-site-id').val() == '0') ? 1 : 0,
+                is_resend:        $('#wpmm-is-resend').val() || 0,
+                original_sent_at: $('#wpmm-prior-sent-at').val() || ''
             },
             success: function (res) {
                 $btn.prop('disabled', false)

@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * @param array $log_entries  Row objects from wpmm_update_log.
  * @param int   $admin_id     Optional override for the performing administrator.
  */
-function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [], $update_note = '' ) {
+function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [], $update_note = '', $is_resend = false, $original_sent_at = '' ) {
 
     $site_name = get_bloginfo( 'name' );
     $site_url  = get_bloginfo( 'url' );
@@ -391,6 +391,23 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
     </div>';
     }
 
+    // ── Resend banner ─────────────────────────────────────────────────────────
+    // Shown at the top of the email body when a previously sent report is
+    // being resent, so the recipient understands the context immediately.
+    $resend_banner = '';
+    if ( $is_resend && $original_sent_at ) {
+        $orig_date      = date_i18n( 'F j, Y', strtotime( $original_sent_at ) );
+        $orig_time      = date_i18n( 'g:i A', strtotime( $original_sent_at ) );
+        $resend_banner  = '
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;
+                padding:14px 18px;margin-bottom:24px;font-size:13px;color:#1e40af;line-height:1.6;">
+      <strong>&#8505; Updated Report:</strong>
+      This is an update to a maintenance report originally sent on
+      <strong>' . esc_html( $orig_date ) . '</strong> at <strong>' . esc_html( $orig_time ) . '</strong>.
+      The updates listed below were performed during that session.
+    </div>';
+    }
+
     // ── Assemble ─────────────────────────────────────────────────────────────
     return '<!DOCTYPE html>
 <html lang="en">
@@ -415,6 +432,7 @@ function wpmm_build_email_body( $log_entries, $admin_id = 0, $manual_entries = [
     <div style="padding:32px 36px 48px;">
       <h2 style="color:#1e3a5f;margin:0 0 6px;font-size:18px;font-family:Georgia,serif;">Weekly WordPress Maintenance Report</h2>
       <p style="color:#6b7280;font-size:13px;margin:0 0 4px;">The following updates were performed on your site.</p>
+      ' . $resend_banner . '
       ' . $update_note_block . '
       ' . $sections . '
       ' . $external_section . '

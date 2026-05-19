@@ -470,7 +470,13 @@ function wpmm_ajax_send_email() {
     }
 
     // ── Single-site email ─────────────────────────────────────────────────────
-    $body   = wpmm_build_email_body( $log_entries, $admin_id, $manual_entries, $update_note );
+    // Pass resend flag and original sent_at from the hidden fields posted by JS.
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    $is_resend        = ! empty( $_POST['is_resend'] ) && (int) $_POST['is_resend'] === 1;
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    $original_sent_at = sanitize_text_field( wp_unslash( $_POST['original_sent_at'] ?? '' ) );
+
+    $body   = wpmm_build_email_body( $log_entries, $admin_id, $manual_entries, $update_note, $is_resend, $original_sent_at );
     $result = wpmm_send_email( $to, $subject, $body, $admin_id, $update_note );
 
     if ( $result['success'] ) {

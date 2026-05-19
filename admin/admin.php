@@ -1365,6 +1365,19 @@ function wpmm_render_log() {
                                         <?php echo count( $items ); ?> item<?php echo count( $items ) !== 1 ? 's' : ''; ?>
                                     </span>
                                 </span>
+                                <?php if ( ! $is_legacy && $sid ) : ?>
+                                    <a href="<?php echo esc_url( add_query_arg( [
+                                        'page'       => WPMM_SLUG_EMAIL,
+                                        'session_id' => $sid,
+                                    ], network_admin_url( 'admin.php' ) ) ); ?>"
+                                       class="wpmm-btn wpmm-btn-secondary wpmm-btn-sm"
+                                       style="font-size:11px;padding:3px 10px;margin-right:8px;"
+                                       onclick="event.stopPropagation();"
+                                       title="Open this session in Email Reports to send or resend">
+                                        <span class="dashicons dashicons-email-alt" style="font-size:13px;width:13px;height:13px;vertical-align:middle;margin-right:3px;"></span>
+                                        Send Report &rarr;
+                                    </a>
+                                <?php endif; ?>
                                 <span class="wpmm-session-caret" aria-hidden="true">&#9660;</span>
                             </span>
                         </button>
@@ -1569,6 +1582,20 @@ function wpmm_render_email() {
         : 0;
     global $wpdb;
 
+    // ── Resend from Update Log — session_id passed via URL ────────────────────
+    // When the user clicks "Send Report →" in the Update Log, we land here with
+    // ?session_id=xxx. Pre-load that session's data and check if it was already
+    // emailed so we can show an amber resend notice and prefix the subject.
+    $url_session_id = sanitize_text_field( $_GET['session_id'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $prior_send     = null; // wpmm_email_log row if this session was previously sent.
+    if ( $url_session_id ) {
+        $prior_send = $wpdb->get_row( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            'SELECT * FROM ' . esc_sql( $wpdb->prefix . 'wpmm_email_log' ) .
+            ' WHERE session_id = %s AND status = "sent" ORDER BY sent_at DESC LIMIT 1',
+            $url_session_id
+        ) );
+    }
+
     // ── Switch to the selected site context for ALL site-specific reads ───────
     // This ensures the recipient email, subject, sessions, log entries, and
     // administrator shown on the Email Reports page reflect the selected site,
@@ -1630,10 +1657,14 @@ function wpmm_render_email() {
 
                 <div class="wpmm-form-row">
                     <label for="wpmm-email-subject-tab">Subject</label>
+                    <?php
+                    $base_subject   = $site_name . ' [' . $site_url . '] Weekly WordPress Upgrades and Maintenance';
+                    $filled_subject = $prior_send ? '[Updated Report] ' . $base_subject : $base_subject;
+                    ?>
                     <input type="text" id="wpmm-email-subject-tab"
-                        value="<?php echo esc_attr( $site_name . ' [' . $site_url . '] Weekly WordPress Upgrades and Maintenance' ); ?>"
+                        value="<?php echo esc_attr( $filled_subject ); ?>"
                         class="wpmm-input"
-                        data-base-subject="<?php echo esc_attr( $site_name . ' [' . $site_url . '] Weekly WordPress Upgrades and Maintenance' ); ?>">
+                        data-base-subject="<?php echo esc_attr( $base_subject ); ?>">
                 </div>
 
                 <div class="wpmm-form-row">
@@ -1702,7 +1733,34 @@ function wpmm_render_email() {
                      JS will override this with the in-page sessionId when updates
                      were run in the same browser session. -->
                 <input type="hidden" id="wpmm-last-session-id"
-                    value="<?php echo esc_attr( isset( $ls['session_id'] ) ? $ls['session_id'] : '' ); ?>">
+                    value="<?php echo esc_attr( $url_session_id ?: ( isset( $ls['session_id'] ) ? $ls['session_id'] : '' ) ); ?>">
+                <input type="hidden" id="wpmm-is-resend"
+                    value="<?php echo $prior_send ? '1' : '0'; ?>">
+                <input type="hidden" id="wpmm-prior-sent-at"
+                    value="<?php echo $prior_send ? esc_attr( $prior_send->sent_at ) : ''; ?>">
+
+                <?php if ( $prior_send ) :
+                    $prior_date = mysql2date( 'F j, Y', $prior_send->sent_at );
+                    $prior_time = mysql2date( 'g:i A', $prior_send->sent_at );
+                    $prior_to   = $prior_send->to_email;
+                ?>
+                <!-- Amber resend notice -->
+                <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;
+                            padding:14px 18px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start;">
+                    <span class="dashicons dashicons-warning" style="color:#f59e0b;font-size:20px;width:20px;height:20px;flex-shrink:0;margin-top:1px;"></span>
+                    <div>
+                        <strong style="color:#92400e;display:block;margin-bottom:4px;">Previously Sent Report</strong>
+                        <p style="margin:0;font-size:13px;color:#78350f;line-height:1.6;">
+                            This session was previously sent on <strong><?php echo esc_html( $prior_date ); ?></strong>
+                            at <strong><?php echo esc_html( $prior_time ); ?></strong>
+                            to <strong><?php echo esc_html( $prior_to ); ?></strong>.
+                            Sending again will notify the recipient that this is an update to that report.
+                            The subject line and email body will be automatically prefixed with
+                            <em>[Updated Report]</em>.
+                        </p>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <hr style="border:none;border-top:1px solid var(--wpmm-border);margin:20px 0;">
 
